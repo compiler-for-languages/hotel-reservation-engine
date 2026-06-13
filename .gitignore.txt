@@ -1,0 +1,58 @@
+# =========================
+# Backend (Spring Boot/Maven)
+# =========================
+
+BE/target/
+BE/.mvn/wrapper/maven-wrapper.jar
+
+# IntelliJ IDEA
+.idea/
+*.iml
+
+# Eclipse
+.project
+.classpath
+.settings/
+
+# VS Code
+.vscode/
+
+# Logs
+*.log
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# =========================
+# Frontend (React)
+# =========================
+
+Frontend/node_modules/
+Frontend/build/
+Frontend/dist/
+
+# Environment Files
+Frontend/.env
+Frontend/.env.local
+Frontend/.env.development.local
+Frontend/.env.test.local
+Frontend/.env.production.local
+
+# npm/yarn logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# =========================
+# General
+# =========================
+
+*.class
+*.jar
+*.war
+*.ear
+
+# Temporary files
+*.tmp
+*.swp
