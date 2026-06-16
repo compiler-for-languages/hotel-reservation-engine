@@ -1,12 +1,12 @@
 package com.infotact.project1.model;
 
 import com.infotact.project1.enums.AccountStatus;
+import com.infotact.project1.enums.Gender;
 import com.infotact.project1.enums.Role;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
 import java.time.LocalDateTime;
 
 /*
@@ -31,6 +31,11 @@ public class User {
 
     @Column(nullable = false)
     private String lastName;
+
+
+    // Stored as STRING to keep enum values readable in the database
+    @Enumerated(EnumType.STRING)
+    private Gender gender;
 
     // Email acts as the unique login identifier
     @Column(nullable = false, unique = true)
