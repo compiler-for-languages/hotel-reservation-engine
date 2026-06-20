@@ -10,7 +10,7 @@ import java.util.List;
 /*
  * Handles database operations for room types.
  */
-
+// JpaRepository provides built-in CRUD operations
 @Repository
 public interface RoomTypeRepository extends JpaRepository<RoomType, Long> {
 
