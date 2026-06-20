@@ -49,6 +49,7 @@ public class RoomType {
     @Column(nullable = false)
     private RoomTypeStatus status;
 
+
     // Automatically managed audit timestamps
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
