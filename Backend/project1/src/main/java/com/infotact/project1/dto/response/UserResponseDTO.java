@@ -1,15 +1,17 @@
-package com.infotact.project1.dto.request;
+package com.infotact.project1.dto.response;
 
 import com.infotact.project1.enums.AccountStatus;
 import com.infotact.project1.enums.Role;
+import lombok.Builder;
 import lombok.Data;
 
-/*
- * Request payload used to create a user.
- */
-
 @Data
-public class UserRequestDTO {
+
+// Builder pattern improves DTO object creation readability
+@Builder
+public class UserResponseDTO {
+
+    private Long userId;
 
     private String firstName;
 
@@ -19,9 +21,7 @@ public class UserRequestDTO {
 
     private String phone;
 
-    private String password;
-
     private Role role;
-    
+
     private AccountStatus accountStatus;
 }
