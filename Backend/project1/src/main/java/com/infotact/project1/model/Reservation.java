@@ -55,9 +55,9 @@ public class Reservation {
     @Column(length = 500)
     private String specialRequest;
 
-    // Automatically managed audit timestamps
+    // Time when reservation was originally created
     @Column(nullable = false, updatable = false)
-    private LocalDateTime createdAt;
+    private LocalDateTime bookingTime;
 
     @Column(nullable = false)
     private LocalDateTime updatedAt;
@@ -65,7 +65,7 @@ public class Reservation {
     // Populate timestamps when reservation is created
     @PrePersist
     public void onCreate() {
-        this.createdAt = LocalDateTime.now();
+        this.bookingTime = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
     }
 
