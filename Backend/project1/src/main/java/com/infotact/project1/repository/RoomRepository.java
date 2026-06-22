@@ -20,10 +20,10 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
     // Used to retrieve rooms belonging to a room type
     List<Room> findByRoomType(RoomType roomType);
 
-
-
     List<Room> findByRoomTypeAndRoomStatus(
             RoomType roomType,
             RoomStatus roomStatus);
     //Spring automatically searches for with this room type and this room status
+
+    long countByRoomType(RoomType roomType);
 }
