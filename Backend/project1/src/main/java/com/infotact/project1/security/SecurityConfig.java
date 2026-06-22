@@ -43,7 +43,7 @@ public class SecurityConfig {
                         ).permitAll()
                          //temporary, Permitting all for development stage
                         .anyRequest().permitAll()
-                      //  .authenticated()
+//                        .authenticated()
                         //except the register and login API, Every other API needs Bearer token if .authenticate id written,
 
                 )
