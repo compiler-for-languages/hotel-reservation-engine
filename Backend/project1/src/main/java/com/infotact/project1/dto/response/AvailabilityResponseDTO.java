@@ -17,6 +17,8 @@ public class AvailabilityResponseDTO {
 
     private Long bookedRooms;
 
+    private Long activeHolds;
+
     private Long availableRooms;
 
     private boolean available;

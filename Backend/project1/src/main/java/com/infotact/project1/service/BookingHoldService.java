@@ -1,0 +1,135 @@
+package com.infotact.project1.service;
+
+import com.infotact.project1.dto.request.BookingHoldRequestDTO;
+import com.infotact.project1.dto.response.BookingHoldResponseDTO;
+import com.infotact.project1.enums.BookingHoldStatus;
+import com.infotact.project1.model.BookingHold;
+import com.infotact.project1.model.RoomType;
+import com.infotact.project1.model.User;
+import com.infotact.project1.repository.BookingHoldRepository;
+import com.infotact.project1.repository.RoomTypeRepository;
+import com.infotact.project1.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+import java.util.UUID;
+
+@Service
+
+// Lombok generates constructor for final fields
+@RequiredArgsConstructor
+public class BookingHoldService {
+
+    // Dependency remains immutable after injection
+    private final BookingHoldRepository bookingHoldRepository;
+
+    // Dependency remains immutable after injection
+    private final UserRepository userRepository;
+
+    // Dependency remains immutable after injection
+    private final RoomTypeRepository roomTypeRepository;
+
+    public BookingHoldResponseDTO createHold(
+            BookingHoldRequestDTO requestDTO) {
+
+        User user = userRepository.findById(
+                        requestDTO.getUserId())
+                .orElseThrow(() ->
+                        new RuntimeException(
+                                "User not found with id: "
+                                        + requestDTO.getUserId()));
+
+        RoomType roomType = roomTypeRepository.findById(
+                        requestDTO.getRoomTypeId())
+                .orElseThrow(() ->
+                        new RuntimeException(
+                                "Room Type not found with id: "
+                                        + requestDTO.getRoomTypeId()));
+
+        // Validate reservation dates
+        if (!requestDTO.getCheckInDate()
+                .isBefore(requestDTO.getCheckOutDate())) {
+
+            throw new RuntimeException(
+                    "Check-in date must be before check-out date");
+        }
+
+        BookingHold bookingHold = new BookingHold();
+
+        bookingHold.setHoldId(
+                UUID.randomUUID().toString());
+
+        bookingHold.setUserId(
+                user.getUserId());
+
+        bookingHold.setRoomTypeId(
+                roomType.getRoomTypeId());
+
+        bookingHold.setCheckInDate(
+                requestDTO.getCheckInDate());
+
+        bookingHold.setCheckOutDate(
+                requestDTO.getCheckOutDate());
+
+        bookingHold.setStatus(
+                BookingHoldStatus.ACTIVE);
+
+        bookingHold.setCreatedAt(
+                LocalDateTime.now());
+
+        bookingHold.setExpiresAt(
+                LocalDateTime.now().plusMinutes(5));
+
+        BookingHold savedHold =
+                bookingHoldRepository.save(bookingHold);
+
+        return mapToResponse(savedHold);
+    }
+
+    public BookingHoldResponseDTO getHoldById(
+            String holdId) {
+
+        BookingHold bookingHold =
+                bookingHoldRepository.findById(holdId)
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "Booking Hold not found with id: "
+                                                + holdId));
+
+        return mapToResponse(bookingHold);
+    }
+
+    public void cancelHold(
+            String holdId) {
+
+        BookingHold bookingHold =
+                bookingHoldRepository.findById(holdId)
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "Booking Hold not found with id: "
+                                                + holdId));
+
+        bookingHold.setStatus(
+                BookingHoldStatus.CANCELLED);
+
+        bookingHoldRepository.save(bookingHold);
+    }
+
+    // Entity → DTO mapper
+    private BookingHoldResponseDTO mapToResponse(
+            BookingHold bookingHold) {
+
+        // Builder pattern improves object creation readability
+        return BookingHoldResponseDTO.builder()
+                .holdId(bookingHold.getHoldId())
+                .userId(bookingHold.getUserId())
+                .roomTypeId(bookingHold.getRoomTypeId())
+                .checkInDate(bookingHold.getCheckInDate())
+                .checkOutDate(bookingHold.getCheckOutDate())
+                .status(bookingHold.getStatus())
+                .createdAt(bookingHold.getCreatedAt())
+                .expiresAt(bookingHold.getExpiresAt())
+                .build();
+    }
+}
