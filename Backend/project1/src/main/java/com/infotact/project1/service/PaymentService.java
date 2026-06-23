@@ -7,6 +7,7 @@ import com.infotact.project1.model.Payment;
 import com.infotact.project1.model.Reservation;
 import com.infotact.project1.repository.PaymentRepository;
 import com.infotact.project1.repository.ReservationRepository;
+import jakarta.annotation.Nonnull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -29,105 +30,176 @@ public class PaymentService {
     private final ReservationRepository reservationRepository;
 
     // Create payment
-    public PaymentResponseDTO createPayment(
-            PaymentRequestDTO requestDTO) {
+    public PaymentResponseDTO createPayment( PaymentRequestDTO requestDTO) {
 
-        public PaymentResponseDTO createPayment(
-                PaymentRequestDTO requestDTO) {
 
-            Reservation reservation =
-                    reservationRepository.findById(
-                                    requestDTO.getReservationId())
-                            .orElseThrow(() ->
-                                    new RuntimeException(
-                                            "Reservation not found with id: "
-                                                    + requestDTO.getReservationId()));
+        Reservation reservation =
+                reservationRepository.findById(
+                                requestDTO.getReservationId())
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "Reservation not found with id: "
+                                                + requestDTO.getReservationId()));
 
-            // Prevent duplicate payment creation
-            if (paymentRepository.findByReservation(
-                    reservation).isPresent()) {
+        // Prevent duplicate payment creation
+        if (paymentRepository.findByReservation(
+                reservation).isPresent()) {
 
-                throw new RuntimeException(
-                        "Payment already exists for reservation: "
-                                + reservation.getReservationId());
-            }
-
-            BigDecimal amount =
-                    calculateAmount(reservation);
-
-            Payment payment = new Payment();
-
-            payment.setReservation(reservation);
-
-            payment.setAmount(amount);
-
-            payment.setCurrency("INR");
-
-            payment.setPaymentMethod(
-                    requestDTO.getPaymentMethod());
-
-            // Currently hardcoded
-            // TODO:
-            // Replace with actual payment gateway integration
-            payment.setPaymentGateway("RAZORPAY");
-
-            // Payment always starts in PENDING state
-            payment.setPaymentStatus(
-                    PaymentStatus.PENDING);
-
-            // Temporary order id
-            // TODO:
-            // Replace with gateway-generated order id
-            payment.setGatewayOrderId(
-                    UUID.randomUUID().toString());
-
-            Payment savedPayment =
-                    paymentRepository.save(payment);
-
-            return mapToResponse(savedPayment);
+            throw new RuntimeException(
+                    "Payment already exists for reservation: "
+                            + reservation.getReservationId());
         }
+
+        BigDecimal amount =
+                calculateAmount(reservation);
+
+        Payment payment = new Payment();
+
+        payment.setReservation(reservation);
+
+        payment.setAmount(amount);
+
+        payment.setCurrency("INR");
+
+        payment.setPaymentMethod(
+                requestDTO.getPaymentMethod());
+
+        // Currently hardcoded
+        // TODO:
+        // Replace with actual payment gateway integration
+        payment.setPaymentGateway("RAZORPAY");
+
+        // Payment always starts in PENDING state
+        payment.setPaymentStatus(
+                PaymentStatus.PENDING);
+
+        // Temporary order id
+        // TODO:
+        // Replace with gateway-generated order id
+        payment.setGatewayOrderId(
+                UUID.randomUUID().toString());
+
+        Payment savedPayment =
+                paymentRepository.save(payment);
+
+        return mapToResponse(savedPayment);
     }
+
 
     // Retrieve all payments
     public List<PaymentResponseDTO> getAllPayments() {
 
-        return null;
+        // Stream API for DTO conversion
+        return paymentRepository.findAll()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
     }
 
     // Retrieve payment by id
     public PaymentResponseDTO getPaymentById(
             Long paymentId) {
 
-        return null;
+
+        Payment payment = paymentRepository.findById(paymentId)
+
+                // Prevents access to non-existent records
+                .orElseThrow(() ->
+                        new RuntimeException(
+                                "Payment not found with id: "
+                                        + paymentId));
+
+        return mapToResponse(payment);
     }
 
     // Retrieve payment by reservation
     public PaymentResponseDTO getPaymentByReservation(
             Long reservationId) {
 
-        return null;
+        Reservation reservation =
+                reservationRepository.findById(
+                                reservationId)
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "Reservation not found with id: "
+                                                + reservationId));
+
+        Payment payment =
+                paymentRepository.findByReservation(
+                                reservation)
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "Payment not found for reservation id: "
+                                                + reservationId));
+
+        return mapToResponse(payment);
     }
 
     // Retrieve payments by status
     public List<PaymentResponseDTO> getPaymentsByStatus(
             PaymentStatus paymentStatus) {
 
-        return null;
+        // Stream API for DTO conversion
+        return paymentRepository.findByPaymentStatus(
+                        paymentStatus)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
     }
 
     // Delete payment
     public void deletePayment(
             Long paymentId) {
+        Payment payment =
+                paymentRepository.findById(paymentId)
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "Payment not found with id: "
+                                                + paymentId));
 
+        // Prevent deletion of completed payments
+        if (payment.getPaymentStatus()
+                == PaymentStatus.SUCCESS) {
+
+            throw new RuntimeException(
+                    "Successful payments cannot be deleted");
+        }
+
+        paymentRepository.delete(payment);
     }
 
-    // State Machine Methods
 
     // PENDING -> PROCESSING
     public PaymentResponseDTO startPayment(
             Long paymentId) {
 
-        return null;
+        Payment payment =
+                paymentRepository.findById(paymentId)
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "Payment not found with id: "
+                                                + paymentId));
+
+        if (payment.getPaymentStatus()
+                != PaymentStatus.PENDING) {
+
+            throw new RuntimeException(
+                    "Only PENDING payments can be moved to PROCESSING");
+        }
+
+        payment.setPaymentStatus(
+                PaymentStatus.PROCESSING);
+
+        Payment updatedPayment =
+                paymentRepository.save(payment);
+
+        // TODO:
+        // Create actual payment order using Razorpay
+
+        // TODO:
+        // Store gateway response
+
+        return mapToResponse(updatedPayment);
     }
 
     // PROCESSING -> SUCCESS
@@ -136,36 +208,174 @@ public class PaymentService {
             String gatewayPaymentId,
             String gatewaySignature) {
 
-        return null;
+        Payment payment =
+                paymentRepository.findById(paymentId)
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "Payment not found with id: "
+                                                + paymentId));
+
+        if (payment.getPaymentStatus()
+                != PaymentStatus.PROCESSING) {
+
+            throw new RuntimeException(
+                    "Only PROCESSING payments can be marked as SUCCESS");
+        }
+
+        payment.setPaymentStatus(
+                PaymentStatus.SUCCESS);
+
+        payment.setGatewayPaymentId(
+                gatewayPaymentId);
+
+        payment.setGatewaySignature(
+                gatewaySignature);
+
+        payment.setPaidAt(
+                LocalDateTime.now());
+
+        Payment updatedPayment =
+                paymentRepository.save(payment);
+
+        // TODO:
+        // Verify payment gateway signature
+
+        // TODO:
+        // Update reservation status to CONFIRMED
+
+        // TODO:
+        // Trigger room assignment workflow
+
+        // TODO:
+        // Send confirmation notification
+
+        return mapToResponse(updatedPayment);
     }
 
     // PROCESSING -> FAILED
     public PaymentResponseDTO markPaymentFailed(
             Long paymentId) {
 
-        return null;
+        Payment payment =
+                paymentRepository.findById(paymentId)
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "Payment not found with id: "
+                                                + paymentId));
+
+        if (payment.getPaymentStatus()
+                != PaymentStatus.PROCESSING) {
+
+            throw new RuntimeException(
+                    "Only PROCESSING payments can be marked as FAILED");
+        }
+
+        payment.setPaymentStatus(
+                PaymentStatus.FAILED);
+
+        Payment updatedPayment =
+                paymentRepository.save(payment);
+
+        // TODO:
+        // Release booking hold
+
+        // TODO:
+        // Release room inventory
+
+        // TODO:
+        // Notify customer about failed payment
+
+        return mapToResponse(updatedPayment);
     }
 
     // SUCCESS -> REFUNDED
     public PaymentResponseDTO refundPayment(
             Long paymentId) {
 
-        return null;
-    }
+        Payment payment =
+                paymentRepository.findById(paymentId)
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "Payment not found with id: "
+                                                + paymentId));
 
-    // Helper Methods
+        if (payment.getPaymentStatus()
+                != PaymentStatus.SUCCESS) {
+
+            throw new RuntimeException(
+                    "Only SUCCESS payments can be refunded");
+        }
+
+        payment.setPaymentStatus(
+                PaymentStatus.REFUNDED);
+
+        Payment updatedPayment =
+                paymentRepository.save(payment);
+
+        // TODO:
+        // Integrate payment gateway refund API
+
+        // TODO:
+        // Create refund record
+
+        // TODO:
+        // Update reservation status
+
+        // TODO:
+        // Send refund notification
+
+        return mapToResponse(updatedPayment);
+    }
 
     // Calculate payment amount from reservation
     private BigDecimal calculateAmount(
             Reservation reservation) {
 
-        return null;
+        long totalNights =
+                ChronoUnit.DAYS.between(
+                        reservation.getCheckInDate(),
+                        reservation.getCheckOutDate());
+
+        BigDecimal pricePerNight =
+                reservation.getRoomType()
+                        .getPricePerNight();
+
+        // TODO:
+        // Add taxes
+
+        // TODO:
+        // Apply coupon discounts
+
+        // TODO:
+        // Apply seasonal pricing
+
+        return pricePerNight.multiply(
+                BigDecimal.valueOf(totalNights));
     }
 
     // Entity -> DTO mapper
     private PaymentResponseDTO mapToResponse(
             Payment payment) {
 
-        return null;
+        return PaymentResponseDTO.builder()
+                .paymentId(payment.getPaymentId())
+                .reservationId(
+                        payment.getReservation()
+                                .getReservationId())
+                .amount(payment.getAmount())
+                .currency(payment.getCurrency())
+                .paymentMethod(
+                        payment.getPaymentMethod())
+                .gatewayOrderId(
+                        payment.getGatewayOrderId())
+                .gatewayPaymentId(
+                        payment.getGatewayPaymentId())
+                .paymentStatus(
+                        payment.getPaymentStatus())
+                .paidAt(payment.getPaidAt())
+                .build();
     }
+
+
 }
+
