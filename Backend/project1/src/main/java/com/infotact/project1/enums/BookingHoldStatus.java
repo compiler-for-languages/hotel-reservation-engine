@@ -3,8 +3,8 @@ package com.infotact.project1.enums;
 public enum BookingHoldStatus {
 
     ACTIVE,
-    CONVERTED,//made permanently booked from temporarily booked
-    EXPIRED,
-    CANCELLED
+    CONVERTED,// Successfully converted to reservation
+    EXPIRED,// Automatically expired after TTL
+    CANCELLED // User cancelled before payment
 
 }
