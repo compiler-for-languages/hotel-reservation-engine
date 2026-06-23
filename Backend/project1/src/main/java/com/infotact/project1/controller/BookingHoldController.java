@@ -3,6 +3,7 @@ package com.infotact.project1.controller;
 import com.infotact.project1.dto.request.BookingHoldRequestDTO;
 import com.infotact.project1.dto.response.BookingHoldResponseDTO;
 import com.infotact.project1.service.BookingHoldService;
+import com.infotact.project1.service.BookingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,6 +14,8 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class BookingHoldController {
 
+    private final BookingService bookingService;
+
     private final BookingHoldService bookingHoldService;
 
     // Create a new booking hold
@@ -20,7 +23,8 @@ public class BookingHoldController {
     public BookingHoldResponseDTO createHold(
             @RequestBody BookingHoldRequestDTO requestDTO) {
 
-        return bookingHoldService.createHold(requestDTO);
+        return bookingService.createBookingHold(
+                requestDTO);
     }
 
     // Retrieve booking hold by id
@@ -28,7 +32,8 @@ public class BookingHoldController {
     public BookingHoldResponseDTO getHoldById(
             @PathVariable String holdId) {
 
-        return bookingHoldService.getHoldById(holdId);
+        return bookingHoldService.getHoldById(
+                holdId);
     }
 
     // Cancel booking hold
@@ -36,7 +41,8 @@ public class BookingHoldController {
     public String cancelHold(
             @PathVariable String holdId) {
 
-        bookingHoldService.cancelHold(holdId);
+        bookingHoldService.cancelHold(
+                holdId);
 
         return "Booking Hold cancelled successfully";
     }
