@@ -1,63 +1,49 @@
 package com.infotact.project1.model;
 
 import com.infotact.project1.enums.BookingHoldStatus;
-import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.redis.core.RedisHash;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /*
- * Represents a temporary reservation lock before payment completion.
- * Prevents multiple users from booking the same room type simultaneously.
+ * Represents a temporary reservation hold stored in Redis.
+ * Prevents multiple users from reserving the same room type simultaneously.
+ * Automatically expires after the configured TTL.
  * Converts into a Reservation after successful payment.
  */
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Entity
-@Table(name = "booking_holds")
+
+// Stored in Redis for 5 minutes
+@RedisHash(value = "bookingHold", timeToLive = 300)
 public class BookingHold {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long holdId;
+    private String holdId;
 
-    // Customer who initiated the booking process
-    @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    // Customer who initiated the booking
+    private Long userId;
 
-    // Room category being temporarily reserved
-    @ManyToOne
-    @JoinColumn(name = "room_type_id", nullable = false)
-    private RoomType roomType;
+    // Room type being temporarily reserved
+    private Long roomTypeId;
 
-    @Column(nullable = false)
     private LocalDate checkInDate;
 
-    @Column(nullable = false)
     private LocalDate checkOutDate;
 
-    // Determines when the temporary hold becomes invalid
-    @Column(nullable = false)
+    // Time when the hold becomes invalid
     private LocalDateTime expiresAt;
 
-    // Tracks the lifecycle of the booking hold
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    // Tracks the lifecycle of the hold
     private BookingHoldStatus status;
 
-    // Automatically managed audit timestamp
-    @Column(nullable = false, updatable = false)
+    // Audit timestamp
     private LocalDateTime createdAt;
-
-    // Populate timestamp when hold is created
-    @PrePersist
-    public void onCreate() {
-        this.createdAt = LocalDateTime.now();
-    }
 }

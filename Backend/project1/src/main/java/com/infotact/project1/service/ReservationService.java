@@ -1,7 +1,9 @@
 package com.infotact.project1.service;
 
+import com.infotact.project1.dto.request.AvailabilityRequestDTO;
 import com.infotact.project1.dto.request.ReservationPatchRequestDTO;
 import com.infotact.project1.dto.request.ReservationRequestDTO;
+import com.infotact.project1.dto.response.AvailabilityResponseDTO;
 import com.infotact.project1.dto.response.ReservationResponseDTO;
 import com.infotact.project1.enums.ReservationStatus;
 import com.infotact.project1.model.Reservation;
@@ -29,6 +31,8 @@ public class ReservationService {
 
     // Dependency remains immutable after injection
     private final RoomTypeRepository roomTypeRepository;
+
+    private final AvailabilityService availabilityService;
 
     public ReservationResponseDTO createReservation(
             ReservationRequestDTO requestDTO) {
@@ -63,6 +67,36 @@ public class ReservationService {
             throw new RuntimeException(
                     "Guest count exceeds room capacity");
         }
+
+        //check room availability
+
+
+        AvailabilityRequestDTO availabilityRequest =
+                new AvailabilityRequestDTO();
+
+        availabilityRequest.setRoomTypeId(
+                roomType.getRoomTypeId());
+
+        availabilityRequest.setCheckInDate(
+                requestDTO.getCheckInDate());
+
+        availabilityRequest.setCheckOutDate(
+                requestDTO.getCheckOutDate());
+
+        AvailabilityResponseDTO availability =
+                availabilityService
+                        .checkAvailability(
+                                availabilityRequest);
+
+        if (!availability.isAvailable()) {
+
+            throw new RuntimeException(
+                    "No rooms available for room type: "
+                            + roomType.getName());
+        }
+
+
+
 
         Reservation reservation = new Reservation();
 
