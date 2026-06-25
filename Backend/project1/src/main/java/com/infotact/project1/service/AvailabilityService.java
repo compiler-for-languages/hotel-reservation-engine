@@ -122,7 +122,7 @@ public class AvailabilityService {
                 .build();
     }
 
-    private AvailabilityCustomerResponseDTO mapToCustomerResponse(
+    public  AvailabilityCustomerResponseDTO mapToCustomerResponse(
             AvailabilityResponseDTO response) {
 
         String message;
