@@ -36,10 +36,7 @@ public class RoomAssignment {
             nullable = false)
     private Room room;
 
-    @ManyToOne
-    @JoinColumn(name = "assigned_by",
-            nullable = false)
-    private User assignedBy;
+
 
     /*
      * When receptionist allotted the room.
