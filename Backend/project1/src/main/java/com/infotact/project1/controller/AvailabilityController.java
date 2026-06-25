@@ -1,6 +1,7 @@
 package com.infotact.project1.controller;
 
 import com.infotact.project1.dto.request.AvailabilityRequestDTO;
+import com.infotact.project1.dto.response.AvailabilityCustomerResponseDTO;
 import com.infotact.project1.dto.response.AvailabilityResponseDTO;
 import com.infotact.project1.service.AvailabilityService;
 import lombok.RequiredArgsConstructor;
@@ -23,5 +24,16 @@ public class AvailabilityController {
 
         return availabilityService
                 .checkAvailability(requestDTO);
+    }
+
+    @PostMapping("/search")
+    public AvailabilityCustomerResponseDTO searchAvailability(
+            @RequestBody AvailabilityRequestDTO requestDTO) {
+
+        AvailabilityResponseDTO internalResponse =
+                availabilityService.checkAvailability(requestDTO);
+// Here I receive the object as normal availabilityresponse DTO and later, I map it to my AvailabilityCustomerResponseDTO
+        return availabilityService
+                .mapToCustomerResponse(internalResponse);
     }
 }
