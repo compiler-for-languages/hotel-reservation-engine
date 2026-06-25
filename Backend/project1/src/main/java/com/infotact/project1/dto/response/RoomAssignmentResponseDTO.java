@@ -29,6 +29,10 @@ public class RoomAssignmentResponseDTO {
 
     private LocalDate checkOutDate;
 
+    private LocalDateTime actualCheckIn;
+
+    private LocalDateTime actualCheckOut;
+
     private LocalDateTime assignedAt;
 
     private AssignmentStatus assignmentStatus;
