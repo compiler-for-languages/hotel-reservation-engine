@@ -1,6 +1,7 @@
 package com.infotact.project1.service;
 
 import com.infotact.project1.dto.request.AvailabilityRequestDTO;
+import com.infotact.project1.dto.response.AvailabilityCustomerResponseDTO;
 import com.infotact.project1.dto.response.AvailabilityResponseDTO;
 import com.infotact.project1.enums.BookingHoldStatus;
 import com.infotact.project1.model.RoomType;
@@ -118,6 +119,45 @@ public class AvailabilityService {
                 .activeHolds(activeHolds)
                 .availableRooms(availableRooms)
                 .available(available)
+                .build();
+    }
+
+    private AvailabilityCustomerResponseDTO mapToCustomerResponse(
+            AvailabilityResponseDTO response) {
+
+        String message;
+
+        if (!response.isAvailable()) {
+
+            message = "Sold Out";
+
+        } else if (response.getAvailableRooms() <= 3) {
+
+            message = "Only "
+                    + response.getAvailableRooms()
+                    + " rooms left";
+
+        } else {
+
+            message = "Available";
+        }
+
+        return AvailabilityCustomerResponseDTO.builder()
+
+                .roomTypeId(response.getRoomTypeId())
+
+                .roomTypeName(response.getRoomTypeName())
+
+                .availableRooms(response.getAvailableRooms())
+
+                .available(response.isAvailable())
+
+                // Fetch these from RoomType if present
+                //.capacity(...)
+                //.pricePerNight(...)
+
+                .availabilityMessage(message)
+
                 .build();
     }
 }
