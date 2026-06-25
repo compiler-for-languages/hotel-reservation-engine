@@ -51,7 +51,8 @@ public class ReservationService {
                         new RuntimeException(
                                 "Room Type not found with id: "
                                         + requestDTO.getRoomTypeId()));
-
+//before proceeding we are checking just whether the room exists or not we also need to check whether that particular room type has
+// rooms available to reserve or not
         // Check check-in/check-out validity
         if (!requestDTO.getCheckInDate()
                 .isBefore(requestDTO.getCheckOutDate())) {
