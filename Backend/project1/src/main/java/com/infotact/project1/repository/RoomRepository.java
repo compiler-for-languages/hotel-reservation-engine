@@ -26,4 +26,8 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
     //Spring automatically searches for with this room type and this room status
 
     long countByRoomType(RoomType roomType);
+
+    long countByRoomStatus(
+            RoomStatus roomStatus);
+    //used in Reception Service
 }

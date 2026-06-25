@@ -1,8 +1,9 @@
 package com.infotact.project1.service;
 
 import com.infotact.project1.dto.request.AssignRoomRequestDTO;
-import com.infotact.project1.dto.response.RoomAssignmentResponseDTO;
+import com.infotact.project1.dto.response.*;
 import com.infotact.project1.enums.AssignmentStatus;
+import com.infotact.project1.repository.GuestRepository;
 import com.infotact.project1.enums.ReservationStatus;
 import com.infotact.project1.enums.Role;
 import com.infotact.project1.enums.RoomStatus;
@@ -17,9 +18,9 @@ import com.infotact.project1.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
+import java.time.*;
 import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -33,6 +34,7 @@ public class ReceptionService {
 
     private final UserRepository userRepository;
 
+    private final GuestRepository guestRepository;
 
     public RoomAssignmentResponseDTO assignRoom(
             AssignRoomRequestDTO requestDTO) {
@@ -284,8 +286,261 @@ public class ReceptionService {
 
     //read and get_data operations, Display on the reception dashboard
 
+    public List<TodayArrivalResponseDTO> getTodayArrivals() {
+
+        List<Reservation> reservations =
+                reservationRepository
+                        .findByReservationStatusAndCheckInDate(
+                                ReservationStatus.CONFIRMED,
+                                LocalDate.now());
+
+        return reservations.stream()
+
+                .map(reservation -> {
+
+                    Optional<RoomAssignment> assignment =
+                            roomAssignmentRepository
+                                    .findByReservation(reservation);
+
+                    return TodayArrivalResponseDTO.builder()
+
+                            .reservationId(
+                                    reservation.getReservationId())
+
+                            .customerName(
+                                    reservation.getUser().getFirstName()
+                                            + " "
+                                            + reservation.getUser().getLastName())
+
+                            .phone(
+                                    reservation.getUser().getPhone())
+
+                            .roomType(
+                                    reservation.getRoomType().getName())
+
+                            .guestCount(
+                                    reservation.getGuestCount())
+
+                            .checkInDate(
+                                    reservation.getCheckInDate())
+
+                            .checkOutDate(
+                                    reservation.getCheckOutDate())
+
+                            .roomAssigned(
+                                    assignment.isPresent())
+
+                            .assignmentStatus(
+                                    assignment
+                                            .map(RoomAssignment::getStatus)
+                                            .orElse(null))
+
+                            .build();
+
+                })
+
+                .toList();
+    }
 
 
+
+
+
+    public List<CurrentGuestResponseDTO> getCurrentGuests() {
+
+        List<RoomAssignment> assignments =
+                roomAssignmentRepository.findByStatus(
+                        AssignmentStatus.CHECKED_IN);
+
+        return assignments.stream()
+
+                .map(assignment -> {
+
+                    Reservation reservation =
+                            assignment.getReservation();
+
+                    List<GuestInfoResponseDTO> guests =
+                            guestRepository
+                                    .findByReservation(
+                                            reservation)
+
+                                    .stream()
+
+                                    .map(guest ->
+
+                                            GuestInfoResponseDTO
+                                                    .builder()
+
+                                                    .guestId(
+                                                            guest.getGuestId())
+
+                                                    .firstName(
+                                                            guest.getFirstName())
+
+                                                    .lastName(
+                                                            guest.getLastName())
+
+                                                    .phone(
+                                                            guest.getPhone())
+
+                                                    .gender(
+                                                            guest.getGender())
+
+                                                    .dateOfBirth(
+                                                            guest.getDateOfBirth())
+
+                                                    .build()
+
+                                    )
+
+                                    .toList();
+
+                    return CurrentGuestResponseDTO
+                            .builder()
+
+                            .reservationId(
+                                    reservation.getReservationId())
+
+                            .primaryCustomerName(
+                                    reservation.getUser()
+                                            .getFirstName()
+                                            + " "
+                                            +
+                                            reservation.getUser()
+                                                    .getLastName())
+
+                            .roomNumber(
+                                    assignment.getRoom()
+                                            .getRoomNumber())
+
+                            .roomType(
+                                    assignment.getRoom()
+                                            .getRoomType()
+                                            .getName())
+
+                            .checkInDate(
+                                    reservation.getCheckInDate())
+
+                            .checkOutDate(
+                                    reservation.getCheckOutDate())
+
+                            .actualCheckIn(
+                                    assignment.getActualCheckIn())
+
+                            .guests(
+                                    guests)
+
+                            .build();
+
+                })
+
+                .toList();
+    }
+
+
+
+    public List<TodayDepartureResponseDTO> getTodayDepartures() {
+
+        List<Reservation> reservations =
+                reservationRepository
+                        .findByReservationStatusAndCheckOutDate(
+                                ReservationStatus.CHECKED_IN,
+                                LocalDate.now());
+
+        return reservations.stream()
+
+                .map(reservation -> {
+
+                    RoomAssignment assignment =
+                            roomAssignmentRepository
+                                    .findByReservation(reservation)
+                                    .orElseThrow(() ->
+                                            new RuntimeException(
+                                                    "Room assignment not found"));
+
+                    return TodayDepartureResponseDTO.builder()
+
+                            .reservationId(
+                                    reservation.getReservationId())
+
+                            .customerName(
+                                    reservation.getUser().getFirstName()
+                                            + " "
+                                            + reservation.getUser().getLastName())
+
+                            .roomNumber(
+                                    assignment.getRoom().getRoomNumber())
+
+                            .roomType(
+                                    assignment.getRoom()
+                                            .getRoomType()
+                                            .getName())
+
+                            .checkOutDate(
+                                    reservation.getCheckOutDate())
+
+                            .actualCheckIn(
+                                    assignment.getActualCheckIn())
+
+                            .build();
+
+                })
+
+                .toList();
+    }
+
+
+
+    public ReceptionDashboardResponseDTO getDashboard() {
+
+        long todayArrivals =
+                reservationRepository
+                        .findByReservationStatusAndCheckInDate(
+                                ReservationStatus.CONFIRMED,
+                                LocalDate.now())
+                        .size();
+
+        long todayDepartures =
+                reservationRepository
+                        .findByReservationStatusAndCheckOutDate(
+                                ReservationStatus.CHECKED_IN,
+                                LocalDate.now())
+                        .size();
+
+        long currentGuests =
+                roomAssignmentRepository
+                        .findByStatus(
+                                AssignmentStatus.CHECKED_IN)
+                        .size();
+
+        long availableRooms =
+                roomRepository.countByRoomStatus(
+                        RoomStatus.AVAILABLE);
+
+        long occupiedRooms =
+                roomRepository.countByRoomStatus(
+                        RoomStatus.OCCUPIED);
+
+        return ReceptionDashboardResponseDTO
+                .builder()
+
+                .todayArrivals(
+                        todayArrivals)
+
+                .todayDepartures(
+                        todayDepartures)
+
+                .currentGuests(
+                        currentGuests)
+
+                .availableRooms(
+                        availableRooms)
+
+                .occupiedRooms(
+                        occupiedRooms)
+
+                .build();
+    }
 
 
 

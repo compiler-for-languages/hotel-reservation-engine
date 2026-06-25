@@ -17,7 +17,7 @@ import java.util.List;
 public class CurrentGuestResponseDTO {
 
     private Long reservationId;
-
+    private String primaryCustomerName;
     private String roomNumber;
 
     private String roomType;
