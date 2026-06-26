@@ -116,4 +116,8 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
      * WHERE room_type_id = ?;
      */
     long countByRoomType(RoomType roomType);
+
+    long countByRoomStatus(
+            RoomStatus roomStatus);
+    //used in Reception Service
 }

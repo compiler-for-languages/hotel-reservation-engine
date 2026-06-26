@@ -103,4 +103,12 @@ public interface ReservationRepository
 
     // Power of Spring Data JPA to create SQL, open connection, execute query,
     // fetch result, close connection, return value
+
+    List<Reservation> findByReservationStatusAndCheckInDate(
+            ReservationStatus status,
+            LocalDate checkInDate);
+
+    List<Reservation> findByReservationStatusAndCheckOutDate(
+            ReservationStatus status,
+            LocalDate checkOutDate);
 }
