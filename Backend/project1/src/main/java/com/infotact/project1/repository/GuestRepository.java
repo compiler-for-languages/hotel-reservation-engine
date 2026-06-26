@@ -51,4 +51,11 @@ public interface GuestRepository
      * WHERE reservation_id = ?
      */
     List<Guest> findByReservation(Reservation reservation);
+
+    /*
+     * Counts the number of guests entered
+     * for a reservation.
+     */
+    long countByReservation(
+            Reservation reservation);
 }
