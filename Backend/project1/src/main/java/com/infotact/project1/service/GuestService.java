@@ -36,6 +36,15 @@ public class GuestService {
                                         "Reservation not found with id: "
                                                 + requestDTO.getReservationId()));
 
+        long enteredGuests =
+                guestRepository.countByReservation(reservation);
+
+        if (enteredGuests >= reservation.getGuestCount()) {
+
+            throw new RuntimeException(
+                    "Maximum guest limit reached for this reservation.");
+        }
+
         Guest guest = new Guest();
 
         guest.setReservation(reservation);
@@ -129,6 +138,25 @@ public class GuestService {
                                 "Guest not found with id: " + guestId));
 
         guestRepository.delete(guest);
+    }
+
+    public void validateGuestDetailsCompleted(Long reservationId) {
+
+        Reservation reservation =
+                reservationRepository.findById(reservationId)
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "Reservation not found with id: "
+                                                + reservationId));
+
+        long enteredGuests =
+                guestRepository.countByReservation(reservation);
+
+        if (enteredGuests != reservation.getGuestCount()) {
+
+            throw new RuntimeException(
+                    "Please enter details for all guests before check-in.");
+        }
     }
 
     // Entity → DTO mapper

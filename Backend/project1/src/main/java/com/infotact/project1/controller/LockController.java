@@ -20,21 +20,24 @@ public class LockController {
     @GetMapping("/test")
     public String testLock() {
 
+        // Acquire an exclusive lock for the specified room type
         RLock lock =
                 lockService.acquireLock("roomType:3");
 
         try {
-
+            // Simulate a critical section protected by the lock
             System.out.println(
                     "Lock acquired by thread: "
                             + Thread.currentThread().getName());
 
+            // Simulate a long running operation
             Thread.sleep(10000);
 
             return "Lock acquired successfully";
 
         } catch (InterruptedException exception) {
 
+            // Restore interrupted thread status
             Thread.currentThread().interrupt();
 
             throw new RuntimeException(
@@ -43,6 +46,7 @@ public class LockController {
 
         } finally {
 
+            // Always release the lock to avoid deadlocks
             lockService.releaseLock(lock);
 
             System.out.println(

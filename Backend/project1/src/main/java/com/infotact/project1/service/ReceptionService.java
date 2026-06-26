@@ -36,6 +36,9 @@ public class ReceptionService {
 
     private final GuestRepository guestRepository;
 
+    private final GuestService guestService;
+
+
     public RoomAssignmentResponseDTO assignRoom(
             AssignRoomRequestDTO requestDTO) {
 
@@ -142,6 +145,9 @@ public class ReceptionService {
             throw new RuntimeException(
                     "Guest has already checked in");
         }
+
+        guestService.validateGuestDetailsCompleted(
+                reservation.getReservationId());
 
         // Update assignment
         assignment.setStatus(
