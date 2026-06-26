@@ -12,6 +12,7 @@ import com.infotact.project1.repository.RoomTypeRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.Objects;
 import java.util.stream.StreamSupport;
 
 @Service
@@ -21,23 +22,20 @@ import java.util.stream.StreamSupport;
 public class AvailabilityService {
 
     // Dependency remains immutable after injection
-    // Repository to retrieve physical room inventory
     private final RoomRepository roomRepository;
 
-    // Repository used to fetch room type details
+    // Dependency remains immutable after injection
     private final RoomTypeRepository roomTypeRepository;
 
-    // Repository used to count confirmed reservations
+    // Dependency remains immutable after injection
     private final ReservationRepository reservationRepository;
 
-    // Redis repository used to count temporary booking holds
+    // Dependency remains immutable after injection
     private final BookingHoldRepository bookingHoldRepository;
 
-    // Calculate room availability for the requested room type and date range
     public AvailabilityResponseDTO checkAvailability(
             AvailabilityRequestDTO requestDTO) {
 
-        // Validate that the requested roomtype exists
         RoomType roomType =
                 roomTypeRepository.findById(
                                 requestDTO.getRoomTypeId())
@@ -46,7 +44,7 @@ public class AvailabilityService {
                                         "Room Type not found with id: "
                                                 + requestDTO.getRoomTypeId()));
 
-        // Ensure check-in date occurs before check-out date
+        // Validate reservation dates
         if (!requestDTO.getCheckInDate()
                 .isBefore(requestDTO.getCheckOutDate())) {
 
@@ -54,7 +52,7 @@ public class AvailabilityService {
                     "Check-in date must be before check-out date");
         }
 
-        // Count total physical rooms belonging to the requested room type
+        // Total inventory available for this room type
         long totalRooms =
                 roomRepository.countByRoomType(roomType);
 
@@ -66,37 +64,17 @@ public class AvailabilityService {
                                 requestDTO.getCheckInDate(),
                                 requestDTO.getCheckOutDate());
 
-        // Count active Redis booking holds overlapping the requested dates
-        long activeHolds =
-                StreamSupport.stream(
-                                bookingHoldRepository
-                                        .findAll()
-                                        .spliterator(),
-                                false)
+        // Count active booking holds overlapping requested dates
+        long activeHolds = StreamSupport.stream(
+                        bookingHoldRepository.findAll().spliterator(), false)
+                .filter(Objects::nonNull)
+                .filter(hold -> hold.getRoomTypeId().equals(roomType.getRoomTypeId()))
+                .filter(hold -> hold.getStatus() == BookingHoldStatus.ACTIVE)
+                .filter(hold ->
+                        hold.getCheckInDate().isBefore(requestDTO.getCheckOutDate()) &&
+                                hold.getCheckOutDate().isAfter(requestDTO.getCheckInDate()))
+                .count();
 
-                        // Consider only holds for the requested room type
-                        .filter(hold ->
-                                hold.getRoomTypeId()
-                                        .equals(roomType.getRoomTypeId()))
-
-                        // Ignore expired or released booking holds
-                        .filter(hold ->
-                                hold.getStatus()
-                                        == BookingHoldStatus.ACTIVE)
-
-                        // Keep only holds whose dates overlap the requested stay
-                        .filter(hold ->
-                                hold.getCheckInDate()
-                                        .isBefore(
-                                                requestDTO.getCheckOutDate())
-                                        &&
-                                        hold.getCheckOutDate()
-                                                .isAfter(
-                                                        requestDTO.getCheckInDate()))
-                        // Count remaining active holds
-                        .count();
-
-        // Convert calculated availability into response DTO
         return mapToResponse(
                 roomType,
                 totalRooms,
@@ -111,7 +89,6 @@ public class AvailabilityService {
             long bookedRooms,
             long activeHolds) {
 
-        // Prevent negative room availability
         long availableRooms =
                 Math.max(
                         0,
@@ -119,7 +96,6 @@ public class AvailabilityService {
                                 - bookedRooms
                                 - activeHolds);
 
-        // Room type is available if at least one room remains
         boolean available =
                 availableRooms > 0;
 
@@ -130,35 +106,36 @@ public class AvailabilityService {
                 .totalRooms(totalRooms)
                 .bookedRooms(bookedRooms)
                 .activeHolds(activeHolds)
-                .availableRooms(availableRooms
-                )
+                .availableRooms(availableRooms)
                 .available(available)
                 .build();
     }
 
-    // Converts internal availability details into a customer-friendly response
     public  AvailabilityCustomerResponseDTO mapToCustomerResponse(
             AvailabilityResponseDTO response) {
 
         String message;
+        RoomType roomType =
+                roomTypeRepository.findById(response.getRoomTypeId()).orElseThrow(() ->
+                new RuntimeException(
+                        "Room Type not found with id: "
+                                + response.getRoomTypeId()));
 
-        // No rooms available
         if (!response.isAvailable()) {
 
             message = "Sold Out";
 
-        } else if (response.getAvailableRooms() <= 3) { // Low inventory warning for customers
+        } else if (response.getAvailableRooms() <= 3) {
 
             message = "Only "
                     + response.getAvailableRooms()
                     + " rooms left";
 
-        } else { // Sufficient rooms available
+        } else {
 
-            message = "Available";
+            message = "Room Available";
         }
 
-        // Return only customer-visible information
         return AvailabilityCustomerResponseDTO.builder()
 
                 .roomTypeId(response.getRoomTypeId())
@@ -170,8 +147,8 @@ public class AvailabilityService {
                 .available(response.isAvailable())
 
                 // Fetch these from RoomType if present
-                //.capacity(...)
-                //.pricePerNight(...)
+                .capacity(roomType.getCapacity())
+                .pricePerNight(roomType.getPricePerNight())
 
                 .availabilityMessage(message)
 
