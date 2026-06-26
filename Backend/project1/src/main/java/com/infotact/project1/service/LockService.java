@@ -13,22 +13,24 @@ import java.util.concurrent.TimeUnit;
 @RequiredArgsConstructor
 public class LockService {
 
-    // Dependency remains immutable after injection
+    // Redisson client used to communicate with Redis
     private final RedissonClient redissonClient;
 
-    // Acquire distributed lock
+    // Acquires a distributed lock for the given resource
     public RLock acquireLock(String lockName) {
 
+        // Obtain a distributed lock object from Redis
         RLock lock = redissonClient.getLock(lockName);
 
         try {
-
+            // wait up to 5 seconds to acquire the lock
+            // automatically release it after 30 seconds if not unlocked manually
             boolean lockAcquired =
                     lock.tryLock(
                             5,
                             30,
                             TimeUnit.SECONDS);
-
+            // Prevent multiple users from accessing the same resource simultaneously
             if (!lockAcquired) {
 
                 throw new RuntimeException(
@@ -40,6 +42,7 @@ public class LockService {
 
         } catch (InterruptedException exception) {
 
+            // Restore interrupted thread status
             Thread.currentThread().interrupt();
 
             throw new RuntimeException(
@@ -49,9 +52,10 @@ public class LockService {
         }
     }
 
-    // Release distributed lock
+    // Release distributed lock after the critical section completes
     public void releaseLock(RLock lock) {
 
+        // unlock only if the current thread owns the lock
         if (lock != null
                 && lock.isHeldByCurrentThread()) {
 

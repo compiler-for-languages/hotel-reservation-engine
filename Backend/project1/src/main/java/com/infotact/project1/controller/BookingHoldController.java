@@ -14,11 +14,13 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class BookingHoldController {
 
+    // Coordinates complete booking workflow
     private final BookingService bookingService;
 
+    // Handles booking hold persistence operations
     private final BookingHoldService bookingHoldService;
 
-    // Create a new booking hold
+    // Create a temporary booking hold after acquiring lock and validating availability
     @PostMapping("/save")
     public BookingHoldResponseDTO createHold(
             @RequestBody BookingHoldRequestDTO requestDTO) {
@@ -27,7 +29,7 @@ public class BookingHoldController {
                 requestDTO);
     }
 
-    // Retrieve booking hold by id
+    // Retrieve booking hold details using its unique hold id
     @GetMapping("/get/{holdId}")
     public BookingHoldResponseDTO getHoldById(
             @PathVariable String holdId) {
@@ -36,7 +38,7 @@ public class BookingHoldController {
                 holdId);
     }
 
-    // Cancel booking hold
+    // Cancels an active booking hold before payment completion
     @PatchMapping("/cancel/{holdId}")
     public String cancelHold(
             @PathVariable String holdId) {

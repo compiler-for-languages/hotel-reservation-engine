@@ -32,7 +32,7 @@ public class AvailabilityController {
 
         AvailabilityResponseDTO internalResponse =
                 availabilityService.checkAvailability(requestDTO);
-// Here I receive the object as normal availabilityresponse DTO and later, I map it to my AvailabilityCustomerResponseDTO
+// Here I receive the object as normal availability response DTO and later, I map it to my AvailabilityCustomerResponseDTO
         return availabilityService
                 .mapToCustomerResponse(internalResponse);
     }
