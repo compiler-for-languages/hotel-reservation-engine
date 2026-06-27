@@ -22,4 +22,6 @@ public class ReservationRequestDTO {
     private Integer guestCount;
 
     private String specialRequest;
+
+    private String paymentMethod; // Customer's selected payment method 
 }
