@@ -36,7 +36,7 @@ public class ReceptionService {
 
     private final GuestRepository guestRepository;
 
-    private final GuestService guestService;
+    private final GuestService guestService; //dependency injected
 
 
     public RoomAssignmentResponseDTO assignRoom(
@@ -148,6 +148,8 @@ public class ReceptionService {
 
         guestService.validateGuestDetailsCompleted(
                 reservation.getReservationId());
+        //Here we validate, whether the no. of guests whose details are entered is equal to the guestCount entered while reservation
+//ensured before checking them in
 
         // Update assignment
         assignment.setStatus(

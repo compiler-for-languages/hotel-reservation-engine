@@ -63,12 +63,11 @@ public class ReservationService {
         }
 
         // Validate room occupancy capacity
-        if (requestDTO.getGuestCount() > roomType.getCapacity()) {
+        int totalOccupants = requestDTO.getGuestCount() + 1;
 
-            throw new RuntimeException(
-                    "Guest count exceeds room capacity");
+        if (totalOccupants > roomType.getCapacity()) {
+            throw new RuntimeException("Room capacity exceeded.");
         }
-
         //check room availability
 
 
@@ -188,6 +187,14 @@ public class ReservationService {
             reservation.setSpecialRequest(
                     requestDTO.getSpecialRequest());
         }
+
+        if (requestDTO.getGuestCount() != null) {
+            reservation.setGuestCount(
+                    requestDTO.getGuestCount());
+        }
+
+
+
 
         Reservation updatedReservation =
                 reservationRepository.save(reservation);

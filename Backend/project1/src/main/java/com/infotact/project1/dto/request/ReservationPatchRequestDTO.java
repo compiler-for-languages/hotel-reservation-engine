@@ -13,4 +13,5 @@ public class ReservationPatchRequestDTO {
     private ReservationStatus reservationStatus;
 
     private String specialRequest;
+    private Integer guestCount; // we can update guestCount also
 }
