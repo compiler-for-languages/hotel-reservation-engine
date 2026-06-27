@@ -1,8 +1,6 @@
 package com.infotact.project1.service;
 
-import com.infotact.project1.dto.request.AvailabilityRequestDTO;
-import com.infotact.project1.dto.request.ReservationPatchRequestDTO;
-import com.infotact.project1.dto.request.ReservationRequestDTO;
+import com.infotact.project1.dto.request.*;
 import com.infotact.project1.dto.response.AvailabilityResponseDTO;
 import com.infotact.project1.dto.response.ReservationResponseDTO;
 import com.infotact.project1.enums.ReservationStatus;
@@ -14,6 +12,7 @@ import com.infotact.project1.repository.ReservationRepository;
 import com.infotact.project1.repository.RoomTypeRepository;
 import com.infotact.project1.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.redisson.api.RLock;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -24,16 +23,22 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ReservationService {
 
-    // Dependency remains immutable after injection
+    //
     private final ReservationRepository reservationRepository;
 
-    // Dependency remains immutable after injection
+    //
     private final UserRepository userRepository;
 
-    // Dependency remains immutable after injection
+    //
     private final RoomTypeRepository roomTypeRepository;
 
     private final AvailabilityService availabilityService;
+
+    private final LockService lockService;
+
+    private final BookingHoldService bookingHoldService;
+
+    private final PaymentService paymentService;
 
     public ReservationResponseDTO createReservation(
             ReservationRequestDTO requestDTO) {
@@ -63,58 +68,109 @@ public class ReservationService {
         }
 
         // Validate room occupancy capacity
+        // Primary customer + additional guests
         int totalOccupants = requestDTO.getGuestCount() + 1;
 
         if (totalOccupants > roomType.getCapacity()) {
             throw new RuntimeException("Room capacity exceeded.");
         }
-        //check room availability
 
 
-        AvailabilityRequestDTO availabilityRequest =
-                new AvailabilityRequestDTO();
+        // Acquire distributed lock to prevent concurrent bookings for the same room type
+        String lockName =
+                "roomType:" + roomType.getRoomTypeId();
 
-        availabilityRequest.setRoomTypeId(
-                roomType.getRoomTypeId());
+        RLock lock =
+                lockService.acquireLock(lockName);
 
-        availabilityRequest.setCheckInDate(
-                requestDTO.getCheckInDate());
+        try {
 
-        availabilityRequest.setCheckOutDate(
-                requestDTO.getCheckOutDate());
+            //check room availability
 
-        AvailabilityResponseDTO availability =
-                availabilityService
-                        .checkAvailability(
-                                availabilityRequest);
+            AvailabilityRequestDTO availabilityRequest =
+                    new AvailabilityRequestDTO();
 
-        if (!availability.isAvailable()) {
+            availabilityRequest.setRoomTypeId(
+                    roomType.getRoomTypeId());
 
-            throw new RuntimeException(
-                    "No rooms available for room type: "
-                            + roomType.getName());
+            availabilityRequest.setCheckInDate(
+                    requestDTO.getCheckInDate());
+
+            availabilityRequest.setCheckOutDate(
+                    requestDTO.getCheckOutDate());
+
+            AvailabilityResponseDTO availability =
+                    availabilityService
+                            .checkAvailability(
+                                    availabilityRequest);
+
+            if (!availability.isAvailable()) {
+
+                throw new RuntimeException(
+                        "No rooms available for room type: "
+                                + roomType.getName());
+            }
+
+            // Create temporary booking hold in Redis
+
+            BookingHoldRequestDTO holdRequest =
+                    new BookingHoldRequestDTO();
+
+            holdRequest.setUserId(user.getUserId());
+
+            holdRequest.setRoomTypeId(roomType.getRoomTypeId());
+
+            holdRequest.setCheckInDate(
+                    requestDTO.getCheckInDate());
+
+            holdRequest.setCheckOutDate(
+                    requestDTO.getCheckOutDate());
+
+            bookingHoldService.createHold(
+                    holdRequest);
+
+            // Create reservation in PENDING state
+
+            Reservation reservation = new Reservation();
+
+            reservation.setUser(user);
+            reservation.setRoomType(roomType);
+            reservation.setCheckInDate(requestDTO.getCheckInDate());
+            reservation.setCheckOutDate(requestDTO.getCheckOutDate());
+            reservation.setGuestCount(requestDTO.getGuestCount());
+            reservation.setSpecialRequest(requestDTO.getSpecialRequest());
+
+            // New reservations start in pending state
+            reservation.setReservationStatus(
+                    ReservationStatus.PENDING);
+
+            Reservation savedReservation =
+                    reservationRepository.save(reservation);
+
+            // Automatically create payment record
+            PaymentRequestDTO paymentRequest =
+                    new PaymentRequestDTO();
+
+            paymentRequest.setReservationId(
+                    savedReservation.getReservationId());
+
+            // Temporary hardcoded payment method
+            paymentRequest.setPaymentMethod(
+                    "UPI");
+
+            paymentService.createPayment(
+                    paymentRequest);
+
+            // Return reservation details
+            return mapToResponse(savedReservation);
+        }
+        finally {
+
+            // Always release the distributed lock
+            lockService.releaseLock(lock);
         }
 
 
-
-
-        Reservation reservation = new Reservation();
-
-        reservation.setUser(user);
-        reservation.setRoomType(roomType);
-        reservation.setCheckInDate(requestDTO.getCheckInDate());
-        reservation.setCheckOutDate(requestDTO.getCheckOutDate());
-        reservation.setGuestCount(requestDTO.getGuestCount());
-        reservation.setSpecialRequest(requestDTO.getSpecialRequest());
-
-        // New reservations start in pending state
-        reservation.setReservationStatus(
-                ReservationStatus.PENDING);
-
-        Reservation savedReservation =
-                reservationRepository.save(reservation);
-
-        return mapToResponse(savedReservation);
     }
 
     public List<ReservationResponseDTO> getAllReservations() {
