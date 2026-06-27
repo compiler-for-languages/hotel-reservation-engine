@@ -1,5 +1,6 @@
 package com.infotact.project1.dto.request;
 
+import com.infotact.project1.enums.PaymentMethod;
 import lombok.Data;
 
 @Data
@@ -7,7 +8,7 @@ public class PaymentRequestDTO {
 
     private Long reservationId;
 
-    private String paymentMethod;
+    private PaymentMethod paymentMethod;
 }
 
 
