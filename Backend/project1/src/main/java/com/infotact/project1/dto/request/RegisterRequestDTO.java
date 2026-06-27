@@ -3,6 +3,8 @@ package com.infotact.project1.dto.request;
 import com.infotact.project1.enums.Gender;
 import lombok.Data;
 
+import java.time.LocalDate;
+
 /*
  * Request payload used for user registration.
  */
@@ -19,6 +21,8 @@ public class RegisterRequestDTO {
     private String email;
 
     private String phone;
+
+   // private LocalDate dateOfBirth;
 
     private String password;
 }
