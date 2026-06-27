@@ -6,6 +6,7 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import com.infotact.project1.enums.PaymentMethod;
 
 @Data
 @Builder
@@ -19,7 +20,7 @@ public class PaymentResponseDTO {
 
     private String currency;
 
-    private String paymentMethod;
+    private PaymentMethod paymentMethod;
 
     private PaymentStatus paymentStatus;
 
