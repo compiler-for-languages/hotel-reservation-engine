@@ -23,5 +23,4 @@ public class ReservationRequestDTO {
 
     private String specialRequest;
 
-    private String paymentMethod; // Customer's selected payment method 
 }
