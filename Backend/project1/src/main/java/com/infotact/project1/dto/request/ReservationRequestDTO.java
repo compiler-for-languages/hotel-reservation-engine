@@ -3,6 +3,7 @@ package com.infotact.project1.dto.request;
 import lombok.Data;
 
 import java.time.LocalDate;
+import com.infotact.project1.enums.PaymentMethod;
 
 /*
  * Request payload used to create a reservation.
@@ -22,5 +23,8 @@ public class ReservationRequestDTO {
     private Integer guestCount;
 
     private String specialRequest;
+
+    // Customer selected payment method
+    private PaymentMethod paymentMethod;
 
 }
