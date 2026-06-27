@@ -62,9 +62,9 @@ public class ReservationService {
         }
 
         // Validate room occupancy capacity
-        int totalOccupants = requestDTO.getGuestCount() + 1;
 
-        if (totalOccupants > roomType.getCapacity()) {
+
+        if (requestDTO.getGuestCount() > roomType.getCapacity()) {
             throw new RuntimeException("Room capacity exceeded.");
         }
         //check room availability
