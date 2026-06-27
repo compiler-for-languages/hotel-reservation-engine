@@ -187,6 +187,13 @@ public class ReservationService {
                     requestDTO.getSpecialRequest());
         }
 
+        if (requestDTO.getGuestCount() != null) {
+            reservation.setGuestCount(
+                    requestDTO.getGuestCount());
+        }
+
+
+
 
         Reservation updatedReservation =
                 reservationRepository.save(reservation);
