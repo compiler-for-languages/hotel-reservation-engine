@@ -154,9 +154,9 @@ public class ReservationService {
             paymentRequest.setReservationId(
                     savedReservation.getReservationId());
 
-            // Temporary hardcoded payment method
+            // multiple payment methods 
             paymentRequest.setPaymentMethod(
-                    "UPI");
+                    requestDTO.getPaymentMethod());
 
             paymentService.createPayment(
                     paymentRequest);
