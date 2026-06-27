@@ -82,15 +82,16 @@ public class GuestService {
     public List<GuestResponseDTO> getGuestsByReservation(
             Long reservationId) {
 
-        Reservation reservation =
-                reservationRepository.findById(reservationId)
-                        .orElseThrow(() ->
-                                new RuntimeException(
-                                        "Reservation not found with id: "
-                                                + reservationId));
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new RuntimeException("Reservation not found"));
 
-        return guestRepository.findByReservation(reservation)
-                .stream()
+        System.out.println("Reservation = " + reservation.getReservationId());
+
+        List<Guest> guests = guestRepository.findByReservation(reservation);
+
+        System.out.println("Guests found = " + guests.size());
+
+        return guests.stream()
                 .map(this::mapToResponse)
                 .toList();
     }
