@@ -9,6 +9,7 @@ import com.infotact.project1.enums.ReservationStatus;
 import com.infotact.project1.model.Reservation;
 import com.infotact.project1.model.RoomType;
 import com.infotact.project1.model.User;
+import com.infotact.project1.repository.PaymentRepository;
 import com.infotact.project1.repository.ReservationRepository;
 import com.infotact.project1.repository.RoomTypeRepository;
 import com.infotact.project1.repository.UserRepository;
