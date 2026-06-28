@@ -7,7 +7,7 @@ import com.infotact.project1.enums.ReservationStatus;
 import com.infotact.project1.model.Reservation;
 import com.infotact.project1.model.RoomType;
 import com.infotact.project1.model.User;
-import com.infotact.project1.repository.PaymentRepository;
+
 import com.infotact.project1.repository.ReservationRepository;
 import com.infotact.project1.repository.RoomTypeRepository;
 import com.infotact.project1.repository.UserRepository;
@@ -111,24 +111,6 @@ public class ReservationService {
                                 + roomType.getName());
             }
 
-            // Create temporary booking hold in Redis
-
-            BookingHoldRequestDTO holdRequest =
-                    new BookingHoldRequestDTO();
-
-            holdRequest.setUserId(user.getUserId());
-
-            holdRequest.setRoomTypeId(roomType.getRoomTypeId());
-
-            holdRequest.setCheckInDate(
-                    requestDTO.getCheckInDate());
-
-            holdRequest.setCheckOutDate(
-                    requestDTO.getCheckOutDate());
-
-            bookingHoldService.createHold(
-                    holdRequest);
-
             // Create reservation in PENDING state
 
             Reservation reservation = new Reservation();
@@ -146,6 +128,28 @@ public class ReservationService {
 
             Reservation savedReservation =
                     reservationRepository.save(reservation);
+
+            // Create temporary booking hold in Redis
+
+            BookingHoldRequestDTO holdRequest =
+                    new BookingHoldRequestDTO();
+
+            holdRequest.setUserId(user.getUserId());
+
+            holdRequest.setRoomTypeId(roomType.getRoomTypeId());
+
+            holdRequest.setCheckInDate(
+                    requestDTO.getCheckInDate());
+
+            holdRequest.setCheckOutDate(
+                    requestDTO.getCheckOutDate());
+
+            holdRequest.setReservationId(
+                    savedReservation.getReservationId());
+
+            bookingHoldService.createHold(
+                    holdRequest);
+
 
             // Automatically create payment record
             PaymentRequestDTO paymentRequest =

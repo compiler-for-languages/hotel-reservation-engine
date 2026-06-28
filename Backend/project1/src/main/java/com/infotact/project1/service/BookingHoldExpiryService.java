@@ -1,7 +1,9 @@
 package com.infotact.project1.service;
 
 import com.infotact.project1.enums.BookingHoldStatus;
+import com.infotact.project1.enums.ReservationStatus;
 import com.infotact.project1.model.BookingHold;
+import com.infotact.project1.model.Reservation;
 import com.infotact.project1.repository.BookingHoldRepository;
 import com.infotact.project1.repository.ReservationRepository;
 import lombok.RequiredArgsConstructor;
@@ -22,15 +24,28 @@ public class BookingHoldExpiryService {
     @Scheduled(fixedRate = 60000)
     public void releaseExpiredBookingHolds() {
         for (BookingHold hold : bookingHoldRepository.findAll()) {
+
             if (hold.getStatus() == BookingHoldStatus.ACTIVE
                     && hold.getExpiresAt().isBefore(LocalDateTime.now())) {
+
                 hold.setStatus(
                         BookingHoldStatus.EXPIRED);
 
                 bookingHoldRepository.save(hold);
 
-            }
+                Reservation reservation =
+                        reservationRepository.findById(
+                                        hold.getReservationId())
+                                .orElseThrow(() ->
+                                        new RuntimeException(
+                                                "Reservation not found"));
 
+                reservation.setReservationStatus(
+                        ReservationStatus.EXPIRED);
+
+                reservationRepository.save(
+                        reservation);
+            }
         }
 
     } // Runs every 60 seconds

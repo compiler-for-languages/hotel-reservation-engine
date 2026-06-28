@@ -136,32 +136,22 @@ public class BookingHoldService {
     }
 
     // Release active booking hold after payment
+    // Release active booking hold using reservation id
     public void releaseActiveHold(
-            Long userId,
-            Long roomTypeId,
-            LocalDate checkInDate,
-            LocalDate checkOutDate) {
+            Long reservationId) {
 
-        BookingHold bookingHold =
-                StreamSupport.stream(
-                                bookingHoldRepository.findAll()
-                                        .spliterator(),
-                                false)
-                        .filter(hold -> hold.getUserId().equals(userId))
-                        .filter(hold -> hold.getRoomTypeId().equals(roomTypeId))
-                        .filter(hold -> hold.getCheckInDate().equals(checkInDate))
-                        .filter(hold -> hold.getCheckOutDate().equals(checkOutDate))
-                        .filter(hold -> hold.getStatus() == BookingHoldStatus.ACTIVE)
-                        .findFirst()
-                        .orElse(null);
-        // If an active booking hold exists, release it
-        if (bookingHold != null) {
+        for (BookingHold hold : bookingHoldRepository.findAll()) {
 
-            bookingHold.setStatus(
-                    BookingHoldStatus.CANCELLED);
+            if (hold.getReservationId().equals(reservationId)
+                    && hold.getStatus() == BookingHoldStatus.ACTIVE) {
 
-            bookingHoldRepository.save(
-                    bookingHold);
+                hold.setStatus(
+                        BookingHoldStatus.CANCELLED);
+
+                bookingHoldRepository.save(hold);
+
+                break;
+            }
         }
     }
 

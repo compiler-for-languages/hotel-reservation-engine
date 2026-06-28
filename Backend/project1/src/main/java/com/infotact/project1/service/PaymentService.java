@@ -8,10 +8,8 @@ import com.infotact.project1.model.Payment;
 import com.infotact.project1.model.Reservation;
 import com.infotact.project1.repository.PaymentRepository;
 import com.infotact.project1.repository.ReservationRepository;
-import jakarta.annotation.Nonnull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -250,25 +248,11 @@ public class PaymentService {
 
         // Release temporary booking hold
         bookingHoldService.releaseActiveHold(
-                reservation.getUser().getUserId(),
-                reservation.getRoomType().getRoomTypeId(),
-                reservation.getCheckInDate(),
-                reservation.getCheckOutDate());
+                reservation.getReservationId());
 
         Payment updatedPayment =
                 paymentRepository.save(payment);
 
-        // TODO:
-        // Verify payment gateway signature
-
-        // TODO:
-        // Update reservation status to CONFIRMED
-
-        // TODO:
-        // Trigger room assignment workflow
-
-        // TODO:
-        // Send confirmation notification
 
         return mapToResponse(updatedPayment);
     }
@@ -300,22 +284,11 @@ public class PaymentService {
 
          // Release booking hold to free Redis inventory
         bookingHoldService.releaseActiveHold(
-                reservation.getUser().getUserId(),
-                reservation.getRoomType().getRoomTypeId(),
-                reservation.getCheckInDate(),
-                reservation.getCheckOutDate());
+                reservation.getReservationId());
 
         Payment updatedPayment =
                 paymentRepository.save(payment);
 
-        // TODO:
-        // Release booking hold
-
-        // TODO:
-        // Release room inventory
-
-        // TODO:
-        // Notify customer about failed payment
 
         return mapToResponse(updatedPayment);
     }
