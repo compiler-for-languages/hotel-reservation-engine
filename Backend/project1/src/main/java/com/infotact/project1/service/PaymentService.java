@@ -3,6 +3,7 @@ package com.infotact.project1.service;
 import com.infotact.project1.dto.request.PaymentRequestDTO;
 import com.infotact.project1.dto.response.PaymentResponseDTO;
 import com.infotact.project1.enums.PaymentStatus;
+import com.infotact.project1.enums.ReservationStatus;
 import com.infotact.project1.model.Payment;
 import com.infotact.project1.model.Reservation;
 import com.infotact.project1.repository.PaymentRepository;
@@ -28,6 +29,9 @@ public class PaymentService {
 
     // Dependency remains immutable after injection
     private final ReservationRepository reservationRepository;
+
+    // Dependency remains immutable after injection
+    private final BookingHoldService bookingHoldService;
 
     // Create payment
     public PaymentResponseDTO createPayment( PaymentRequestDTO requestDTO) {
@@ -234,6 +238,23 @@ public class PaymentService {
         payment.setPaidAt(
                 LocalDateTime.now());
 
+        // Confirm reservation after successful payment
+        Reservation reservation =
+                payment.getReservation();
+
+        reservation.setReservationStatus(
+                ReservationStatus.CONFIRMED);
+
+        reservationRepository.save(
+                reservation);
+
+        // Release temporary booking hold
+        bookingHoldService.releaseActiveHold(
+                reservation.getUser().getUserId(),
+                reservation.getRoomType().getRoomTypeId(),
+                reservation.getCheckInDate(),
+                reservation.getCheckOutDate());
+
         Payment updatedPayment =
                 paymentRepository.save(payment);
 
@@ -272,6 +293,17 @@ public class PaymentService {
 
         payment.setPaymentStatus(
                 PaymentStatus.FAILED);
+
+        // Retrieve associated reservation
+        Reservation reservation =
+                payment.getReservation();
+
+         // Release booking hold to free Redis inventory
+        bookingHoldService.releaseActiveHold(
+                reservation.getUser().getUserId(),
+                reservation.getRoomType().getRoomTypeId(),
+                reservation.getCheckInDate(),
+                reservation.getCheckOutDate());
 
         Payment updatedPayment =
                 paymentRepository.save(payment);
