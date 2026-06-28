@@ -46,4 +46,7 @@ public class BookingHold {
 
     // Audit timestamp
     private LocalDateTime createdAt;
+
+    // Reservation associated with this booking hold
+    private Long reservationId;
 }
