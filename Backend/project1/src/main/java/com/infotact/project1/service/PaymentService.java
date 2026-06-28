@@ -314,20 +314,28 @@ public class PaymentService {
         payment.setPaymentStatus(
                 PaymentStatus.REFUNDED);
 
+// Retrieve associated reservation
+        Reservation reservation =
+                payment.getReservation();
+
+// Cancel reservation after successful refund
+        reservation.setReservationStatus(
+                ReservationStatus.CANCELLED);
+
+        reservationRepository.save(
+                reservation);
+
         Payment updatedPayment =
                 paymentRepository.save(payment);
 
-        // TODO:
-        // Integrate payment gateway refund API
+// TODO:
+// Integrate payment gateway refund API
 
-        // TODO:
-        // Create refund record
+// TODO:
+// Create refund record
 
-        // TODO:
-        // Update reservation status
-
-        // TODO:
-        // Send refund notification
+// TODO:
+// Send refund notification
 
         return mapToResponse(updatedPayment);
     }
