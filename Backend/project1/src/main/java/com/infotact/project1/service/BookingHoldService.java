@@ -142,7 +142,7 @@ public class BookingHoldService {
 
         for (BookingHold hold : bookingHoldRepository.findAll()) {
 
-            if (hold.getReservationId().equals(reservationId)
+            if (reservationId.equals(hold.getReservationId())
                     && hold.getStatus() == BookingHoldStatus.ACTIVE) {
 
                 hold.setStatus(
