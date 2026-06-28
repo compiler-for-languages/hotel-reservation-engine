@@ -12,8 +12,10 @@ import com.infotact.project1.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
+import java.util.stream.StreamSupport;
 
 @Service
 
@@ -128,6 +130,36 @@ public class BookingHoldService {
                 BookingHoldStatus.CANCELLED);
 
         bookingHoldRepository.save(bookingHold);
+    }
+
+    // Release active booking hold after payment
+    public void releaseActiveHold(
+            Long userId,
+            Long roomTypeId,
+            LocalDate checkInDate,
+            LocalDate checkOutDate) {
+
+        BookingHold bookingHold =
+                StreamSupport.stream(
+                                bookingHoldRepository.findAll()
+                                        .spliterator(),
+                                false)
+                        .filter(hold -> hold.getUserId().equals(userId))
+                        .filter(hold -> hold.getRoomTypeId().equals(roomTypeId))
+                        .filter(hold -> hold.getCheckInDate().equals(checkInDate))
+                        .filter(hold -> hold.getCheckOutDate().equals(checkOutDate))
+                        .filter(hold -> hold.getStatus() == BookingHoldStatus.ACTIVE)
+                        .findFirst()
+                        .orElse(null);
+        // If an active booking hold exists, release it
+        if (bookingHold != null) {
+
+            bookingHold.setStatus(
+                    BookingHoldStatus.CANCELLED);
+
+            bookingHoldRepository.save(
+                    bookingHold);
+        }
     }
 
     // Entity → DTO mapper

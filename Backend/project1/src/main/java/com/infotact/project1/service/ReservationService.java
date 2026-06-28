@@ -154,7 +154,7 @@ public class ReservationService {
             paymentRequest.setReservationId(
                     savedReservation.getReservationId());
 
-            // multiple payment methods 
+            // multiple payment methods
             paymentRequest.setPaymentMethod(
                     requestDTO.getPaymentMethod());
 
