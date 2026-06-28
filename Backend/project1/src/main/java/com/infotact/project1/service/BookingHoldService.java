@@ -75,6 +75,9 @@ public class BookingHoldService {
         bookingHold.setRoomTypeId(
                 roomType.getRoomTypeId());
 
+        bookingHold.setReservationId(
+                requestDTO.getReservationId());
+
         // Store booking period
         bookingHold.setCheckInDate(
                 requestDTO.getCheckInDate());
