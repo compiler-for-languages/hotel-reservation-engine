@@ -14,6 +14,7 @@ import com.infotact.project1.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.redisson.api.RLock;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -40,6 +41,7 @@ public class ReservationService {
 
     private final PaymentService paymentService;
 
+    @Transactional
     public ReservationResponseDTO createReservation(
             ReservationRequestDTO requestDTO) {
 
@@ -68,10 +70,9 @@ public class ReservationService {
         }
 
         // Validate room occupancy capacity
-        // Primary customer + additional guests
-        int totalOccupants = requestDTO.getGuestCount() + 1;
+        // Primary customer (may or may not ) + additional guests
 
-        if (totalOccupants > roomType.getCapacity()) {
+        if (requestDTO.getGuestCount() > roomType.getCapacity()) {
             throw new RuntimeException("Room capacity exceeded.");
         }
 
@@ -82,6 +83,8 @@ public class ReservationService {
 
         RLock lock =
                 lockService.acquireLock(lockName);
+
+        Reservation savedReservation = null;
 
         try {
 
@@ -111,6 +114,7 @@ public class ReservationService {
                                 + roomType.getName());
             }
 
+
             // Create reservation in PENDING state
 
             Reservation reservation = new Reservation();
@@ -126,17 +130,20 @@ public class ReservationService {
             reservation.setReservationStatus(
                     ReservationStatus.PENDING);
 
-            Reservation savedReservation =
+           savedReservation =
                     reservationRepository.save(reservation);
-
-            // Create temporary booking hold in Redis
 
             BookingHoldRequestDTO holdRequest =
                     new BookingHoldRequestDTO();
 
-            holdRequest.setUserId(user.getUserId());
+            holdRequest.setReservationId(
+                    savedReservation.getReservationId());
 
-            holdRequest.setRoomTypeId(roomType.getRoomTypeId());
+            holdRequest.setUserId(
+                    user.getUserId());
+
+            holdRequest.setRoomTypeId(
+                    roomType.getRoomTypeId());
 
             holdRequest.setCheckInDate(
                     requestDTO.getCheckInDate());
@@ -144,11 +151,7 @@ public class ReservationService {
             holdRequest.setCheckOutDate(
                     requestDTO.getCheckOutDate());
 
-            holdRequest.setReservationId(
-                    savedReservation.getReservationId());
-
-            bookingHoldService.createHold(
-                    holdRequest);
+            bookingHoldService.createHold(holdRequest);
 
 
             // Automatically create payment record
@@ -167,6 +170,15 @@ public class ReservationService {
 
             // Return reservation details
             return mapToResponse(savedReservation);
+        }
+        catch(Exception exception){
+            // Release booking hold if it was already created
+            if(savedReservation != null){
+                bookingHoldService.releaseActiveHold(
+                        savedReservation.getReservationId());
+            }
+
+            throw exception;
         }
         finally {
 
