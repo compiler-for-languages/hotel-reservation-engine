@@ -24,7 +24,6 @@ import java.time.LocalDateTime;
 // Stored in Redis for 5 minutes
 @RedisHash(value = "bookingHold", timeToLive = 300)
 public class BookingHold {
-
     @Id
     private String holdId;
 

@@ -14,7 +14,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.UUID;
+
 import java.util.stream.StreamSupport;
 
 @Service
@@ -63,9 +63,10 @@ public class BookingHoldService {
         // Create new booking hold
         BookingHold bookingHold = new BookingHold();
 
-        // Generate globally unique hold identifier
+        // Use reservation id as Redis key.
+        // Makes it easy to identify the reservation when the key expires.
         bookingHold.setHoldId(
-                UUID.randomUUID().toString());
+                requestDTO.getReservationId().toString());
 
         // Store customer reference
         bookingHold.setUserId(
@@ -140,19 +141,9 @@ public class BookingHoldService {
     public void releaseActiveHold(
             Long reservationId) {
 
-        for (BookingHold hold : bookingHoldRepository.findAll()) {
-
-            if (reservationId.equals(hold.getReservationId())
-                    && hold.getStatus() == BookingHoldStatus.ACTIVE) {
-
-                hold.setStatus(
-                        BookingHoldStatus.CANCELLED);
-
-                bookingHoldRepository.save(hold);
-
-                break;
-            }
-        }
+        // Reservation id is also used as the Redis key
+        bookingHoldRepository.deleteById(
+                reservationId.toString());
     }
 
     // Entity → DTO mapper
