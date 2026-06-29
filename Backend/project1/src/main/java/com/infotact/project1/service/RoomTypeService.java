@@ -19,6 +19,14 @@ public class RoomTypeService {
 
     public RoomTypeResponseDTO createRoomType(RoomTypeRequestDTO requestDTO) {
 
+        roomTypeRepository.findByName(
+                        requestDTO.getName())
+                .ifPresent(room -> {
+
+                    throw new RuntimeException(
+                            "Room type already exists.");
+
+                });
 
         RoomType roomType = new RoomType();
 

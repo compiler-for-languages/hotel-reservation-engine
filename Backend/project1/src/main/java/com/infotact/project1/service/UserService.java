@@ -7,6 +7,7 @@ import com.infotact.project1.model.User;
 import com.infotact.project1.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.List;
 
@@ -18,6 +19,8 @@ public class UserService {
 
     // Dependency remains immutable after injection
     private final UserRepository userRepository;
+
+    private final PasswordEncoder passwordEncoder;
 
     public UserResponseDTO createUser(UserRequestDTO requestDTO) {
 
@@ -44,8 +47,9 @@ public class UserService {
         user.setEmail(requestDTO.getEmail());
         user.setPhone(requestDTO.getPhone());
 
-        // Password encryption will be added with Spring Security
-        user.setPasswordHash(requestDTO.getPassword());
+        // BCrypt hashes password before storing
+        user.setPasswordHash(
+                passwordEncoder.encode(requestDTO.getPassword()));
 
         user.setRole(requestDTO.getRole());
 

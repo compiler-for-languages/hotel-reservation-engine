@@ -18,4 +18,7 @@ public class BookingHoldRequestDTO {
     private LocalDate checkInDate;
 
     private LocalDate checkOutDate;
+
+    // Reservation created for this booking hold
+    private Long reservationId;
 }
