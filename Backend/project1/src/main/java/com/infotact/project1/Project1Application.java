@@ -2,6 +2,7 @@ package com.infotact.project1;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 
 /*
@@ -18,6 +19,7 @@ Responsibilities:
 -> Creates all required Spring-managed objects
  */
 @SpringBootApplication
+@EnableScheduling
 public class Project1Application {
 
 	/*
