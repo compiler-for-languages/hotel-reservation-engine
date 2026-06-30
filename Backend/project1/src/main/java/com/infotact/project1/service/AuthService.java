@@ -24,7 +24,7 @@ public class AuthService {
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
 
-    public UserResponseDTO register(RegisterRequestDTO requestDTO) {
+    public UserResponseDTO registerCustomer(RegisterRequestDTO requestDTO) {
 
         // Prevent duplicate email addresses
         userRepository.findByEmail(requestDTO.getEmail())

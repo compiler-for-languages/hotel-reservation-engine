@@ -10,23 +10,23 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/user")
+@RequestMapping("/api/users")
 
 // Lombok generates constructor for final fields
 @RequiredArgsConstructor
-public class UserController {
+public class AdminUserController {
 
     private final UserService userService;
 
     // Create a new user
-    @PostMapping("/save")
-    public UserResponseDTO createUser(
+    @PostMapping("/receptionist")
+    public UserResponseDTO createReceptionist(  // Admin creates receptionist
             @RequestBody UserRequestDTO requestDTO) {
 
         return userService.createUser(requestDTO);
     }
 
-    // Retrieve all users
+    // Retrieve all users : customers + receptionists
     @GetMapping("/getall")
     public List<UserResponseDTO> getAllUsers() {
 
@@ -66,5 +66,19 @@ public class UserController {
         userService.deleteUser(userId);
 
         return "User deleted successfully";
+    }
+
+    // Retrieve only customers
+    @GetMapping("/customers")
+    public List<UserResponseDTO> getAllCustomers() {
+
+        return userService.getAllCustomers();
+    }
+
+    // Retrieve only receptionists
+    @GetMapping("/receptionists")
+    public List<UserResponseDTO> getAllReceptionists() {
+
+        return userService.getAllReceptionists();
     }
 }

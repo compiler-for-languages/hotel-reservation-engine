@@ -19,10 +19,10 @@ public class AuthController {
 
     // Register a new user account
     @PostMapping("/register")
-    public UserResponseDTO register(
+    public UserResponseDTO registerCustomer(
             @RequestBody RegisterRequestDTO requestDTO) {
 
-        return authService.register(requestDTO);
+        return authService.registerCustomer(requestDTO);
     }
 
     @PostMapping("/login")

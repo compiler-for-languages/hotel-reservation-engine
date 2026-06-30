@@ -3,6 +3,7 @@ package com.infotact.project1.service;
 import com.infotact.project1.dto.request.UserPatchRequestDTO;
 import com.infotact.project1.dto.request.UserRequestDTO;
 import com.infotact.project1.dto.response.UserResponseDTO;
+import com.infotact.project1.enums.Role;
 import com.infotact.project1.model.User;
 import com.infotact.project1.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,8 @@ public class UserService {
 
     private final PasswordEncoder passwordEncoder;
 
+
+// Admin creates receptionist and receptionist creates walk-in user
     public UserResponseDTO createUser(UserRequestDTO requestDTO) {
 
         // Prevent duplicate email addresses
@@ -46,6 +49,7 @@ public class UserService {
         user.setLastName(requestDTO.getLastName());
         user.setEmail(requestDTO.getEmail());
         user.setPhone(requestDTO.getPhone());
+        user.setGender(requestDTO.getGender());
 
         // BCrypt hashes password before storing
         user.setPasswordHash(
@@ -144,6 +148,23 @@ public class UserService {
 
         userRepository.delete(user);
     }
+
+    public List<UserResponseDTO> getAllCustomers() {
+
+        return userRepository.findByRole(Role.CUSTOMER)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    public List<UserResponseDTO> getAllReceptionists() {
+
+        return userRepository.findByRole(Role.RECEPTIONIST)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
 
     // Entity → DTO mapper
     private UserResponseDTO mapToResponse(User user) {
