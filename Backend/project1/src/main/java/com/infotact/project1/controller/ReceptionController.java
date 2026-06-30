@@ -1,15 +1,14 @@
 package com.infotact.project1.controller;
 
 import com.infotact.project1.dto.request.AssignRoomRequestDTO;
-import com.infotact.project1.dto.response.CurrentGuestResponseDTO;
-import com.infotact.project1.dto.response.ReceptionDashboardResponseDTO;
-import com.infotact.project1.dto.response.RoomAssignmentResponseDTO;
-import com.infotact.project1.dto.response.TodayArrivalResponseDTO;
-import com.infotact.project1.dto.response.TodayDepartureResponseDTO;
+import com.infotact.project1.dto.request.UserRequestDTO;
+import com.infotact.project1.dto.response.*;
 import com.infotact.project1.service.ReceptionService;
+import com.infotact.project1.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+
 
 import java.util.List;
 
@@ -26,6 +25,15 @@ public class ReceptionController {
 
     // Business logic for receptionist operations
     private final ReceptionService receptionService;
+
+    private final UserService userService;
+
+    @PostMapping("/customer")
+    public UserResponseDTO createWalkInCustomer(
+            @RequestBody UserRequestDTO requestDTO) {
+
+        return userService.createUser(requestDTO);
+    }
 
     /*
      * Assign an available room to a confirmed reservation.

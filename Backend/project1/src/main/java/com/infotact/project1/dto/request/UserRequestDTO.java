@@ -1,6 +1,7 @@
 package com.infotact.project1.dto.request;
 
 import com.infotact.project1.enums.AccountStatus;
+import com.infotact.project1.enums.Gender;
 import com.infotact.project1.enums.Role;
 import lombok.Data;
 
@@ -15,6 +16,8 @@ public class UserRequestDTO {
 
     private String lastName;
 
+    private Gender gender;
+
     private String email;
 
     private String phone;
@@ -22,6 +25,8 @@ public class UserRequestDTO {
     private String password;
 
     private Role role;
+
+
     
     private AccountStatus accountStatus;
 }
