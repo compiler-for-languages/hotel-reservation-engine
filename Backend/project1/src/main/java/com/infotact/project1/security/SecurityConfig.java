@@ -14,6 +14,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
  * Central security configuration.
  */
 
+// role based access must be provided !
 @Configuration
 @EnableMethodSecurity
 @RequiredArgsConstructor
