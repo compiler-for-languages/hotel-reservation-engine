@@ -70,9 +70,9 @@ public class SecurityConfig {
                                 "/v3/api-docs/**"
                         ).permitAll()
                          //temporary, Permitting all for development stage
-                        .anyRequest().permitAll()
-//                        .authenticated()
-                        //except the register and login API, Every other API needs Bearer token if .authenticate id written,
+                        .anyRequest()//.permitAll()
+                    .authenticated()
+                        //except the register and login API, Every other API needs Bearer token if .authenticated written,
 
                 )
 
