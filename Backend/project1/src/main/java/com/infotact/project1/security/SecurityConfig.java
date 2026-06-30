@@ -56,24 +56,68 @@ public class SecurityConfig {
                 * CSRF protection is unnecessary
                  */
                 .csrf(csrf -> csrf.disable())
-
+//
+//                .authorizeHttpRequests(auth -> auth
+//
+//                        .requestMatchers(
+//                                "/api/auth/**"   // publicly accessible
+//                        ).permitAll()
+//
+//                        .requestMatchers( //swagger documentation endpoints are publicly
+//                                            // accessible
+//                                "/swagger-ui/**",
+//                                "/swagger-ui.html",
+//                                "/v3/api-docs/**"
+//                        ).permitAll()
+//                         //temporary, Permitting all for development stage
+//                        .anyRequest()//.permitAll()
+//                    .authenticated()
+//                        //except the register and login API, Every other API needs Bearer token if .authenticated written,
+//
+//                )
                 .authorizeHttpRequests(auth -> auth
 
+                        // Public APIs
                         .requestMatchers(
-                                "/api/auth/**"   // publicly accessible
-                        ).permitAll()
-
-                        .requestMatchers( //swagger documentation endpoints are publicly
-                                            // accessible
+                                "/api/auth/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
                                 "/v3/api-docs/**"
                         ).permitAll()
-                         //temporary, Permitting all for development stage
-                        .anyRequest().permitAll()
-//                        .authenticated()
-                        //except the register and login API, Every other API needs Bearer token if .authenticate id written,
 
+                        // ---------------- ADMIN ----------------
+
+                        .requestMatchers("/api/users/**")
+                        .hasRole("ADMIN")
+
+                        .requestMatchers("/api/room/**")
+                        .hasRole("ADMIN")
+
+                        .requestMatchers("/api/roomtype/**")
+                        .hasRole("ADMIN")
+
+                        // ---------------- RECEPTION ----------------
+
+                        .requestMatchers("/api/reception/**")
+                        .hasAnyRole("ADMIN", "RECEPTIONIST")
+
+                        // ---------------- CUSTOMER OPERATIONS ----------------
+
+                        .requestMatchers(
+                                "/api/reservation/**",
+                                "/api/payment/**",
+                                "/api/guest/**",
+                                "/api/availability/**",
+                                "/api/bookinghold/**"
+                        )
+                        .hasAnyRole(
+                                "ADMIN",
+                                "RECEPTIONIST",
+                                 "CUSTOMER"
+                        )
+                        .requestMatchers("api/lock/**")
+                        .permitAll()
+                        .anyRequest().authenticated()
                 )
 
                 /*
