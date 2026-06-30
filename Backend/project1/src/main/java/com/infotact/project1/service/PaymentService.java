@@ -3,14 +3,13 @@ package com.infotact.project1.service;
 import com.infotact.project1.dto.request.PaymentRequestDTO;
 import com.infotact.project1.dto.response.PaymentResponseDTO;
 import com.infotact.project1.enums.PaymentStatus;
+import com.infotact.project1.enums.ReservationStatus;
 import com.infotact.project1.model.Payment;
 import com.infotact.project1.model.Reservation;
 import com.infotact.project1.repository.PaymentRepository;
 import com.infotact.project1.repository.ReservationRepository;
-import jakarta.annotation.Nonnull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -28,6 +27,9 @@ public class PaymentService {
 
     // Dependency remains immutable after injection
     private final ReservationRepository reservationRepository;
+
+    // Dependency remains immutable after injection
+    private final BookingHoldService bookingHoldService;
 
     // Create payment
     public PaymentResponseDTO createPayment( PaymentRequestDTO requestDTO) {
@@ -234,20 +236,23 @@ public class PaymentService {
         payment.setPaidAt(
                 LocalDateTime.now());
 
+        // Confirm reservation after successful payment
+        Reservation reservation =
+                payment.getReservation();
+
+        reservation.setReservationStatus(
+                ReservationStatus.CONFIRMED);
+
+        reservationRepository.save(
+                reservation);
+
+        // Release temporary booking hold
+        bookingHoldService.releaseActiveHold(
+                reservation.getReservationId());
+
         Payment updatedPayment =
                 paymentRepository.save(payment);
 
-        // TODO:
-        // Verify payment gateway signature
-
-        // TODO:
-        // Update reservation status to CONFIRMED
-
-        // TODO:
-        // Trigger room assignment workflow
-
-        // TODO:
-        // Send confirmation notification
 
         return mapToResponse(updatedPayment);
     }
@@ -273,17 +278,17 @@ public class PaymentService {
         payment.setPaymentStatus(
                 PaymentStatus.FAILED);
 
+        // Retrieve associated reservation
+        Reservation reservation =
+                payment.getReservation();
+
+         // Release booking hold to free Redis inventory
+        bookingHoldService.releaseActiveHold(
+                reservation.getReservationId());
+
         Payment updatedPayment =
                 paymentRepository.save(payment);
 
-        // TODO:
-        // Release booking hold
-
-        // TODO:
-        // Release room inventory
-
-        // TODO:
-        // Notify customer about failed payment
 
         return mapToResponse(updatedPayment);
     }
@@ -309,20 +314,28 @@ public class PaymentService {
         payment.setPaymentStatus(
                 PaymentStatus.REFUNDED);
 
+// Retrieve associated reservation
+        Reservation reservation =
+                payment.getReservation();
+
+// Cancel reservation after successful refund
+        reservation.setReservationStatus(
+                ReservationStatus.CANCELLED);
+
+        reservationRepository.save(
+                reservation);
+
         Payment updatedPayment =
                 paymentRepository.save(payment);
 
-        // TODO:
-        // Integrate payment gateway refund API
+// TODO:
+// Integrate payment gateway refund API
 
-        // TODO:
-        // Create refund record
+// TODO:
+// Create refund record
 
-        // TODO:
-        // Update reservation status
-
-        // TODO:
-        // Send refund notification
+// TODO:
+// Send refund notification
 
         return mapToResponse(updatedPayment);
     }

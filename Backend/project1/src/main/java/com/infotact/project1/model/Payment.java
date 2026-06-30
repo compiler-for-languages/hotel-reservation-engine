@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import com.infotact.project1.enums.PaymentMethod;
 
 /*
  * Represents a payment transaction for a reservation.
@@ -39,9 +40,14 @@ public class Payment {
     @Column(nullable = false, length = 10)
     private String currency;
 
-    // Example: CARD, UPI, NET_BANKING, WALLET
+//    // Example: CARD, UPI, NET_BANKING, WALLET
+//    @Column(nullable = false)
+//    private String paymentMethod;
+
+    // Selected payment method
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String paymentMethod;
+    private PaymentMethod paymentMethod;
 
     // Example: Razorpay, Stripe
     @Column(nullable = false)

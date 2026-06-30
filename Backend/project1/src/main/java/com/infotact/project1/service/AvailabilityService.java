@@ -12,6 +12,7 @@ import com.infotact.project1.repository.RoomTypeRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.Objects;
 import java.util.stream.StreamSupport;
 
 @Service
@@ -64,27 +65,15 @@ public class AvailabilityService {
                                 requestDTO.getCheckOutDate());
 
         // Count active booking holds overlapping requested dates
-        long activeHolds =
-                StreamSupport.stream(
-                                bookingHoldRepository
-                                        .findAll()
-                                        .spliterator(),
-                                false)
-                        .filter(hold ->
-                                hold.getRoomTypeId()
-                                        .equals(roomType.getRoomTypeId()))
-                        .filter(hold ->
-                                hold.getStatus()
-                                        == BookingHoldStatus.ACTIVE)
-                        .filter(hold ->
-                                hold.getCheckInDate()
-                                        .isBefore(
-                                                requestDTO.getCheckOutDate())
-                                        &&
-                                        hold.getCheckOutDate()
-                                                .isAfter(
-                                                        requestDTO.getCheckInDate()))
-                        .count();
+        long activeHolds = StreamSupport.stream(
+                        bookingHoldRepository.findAll().spliterator(), false)
+                .filter(Objects::nonNull)
+                .filter(hold -> hold.getRoomTypeId().equals(roomType.getRoomTypeId()))
+                .filter(hold -> hold.getStatus() == BookingHoldStatus.ACTIVE)
+                .filter(hold ->
+                        hold.getCheckInDate().isBefore(requestDTO.getCheckOutDate()) &&
+                                hold.getCheckOutDate().isAfter(requestDTO.getCheckInDate()))
+                .count();
 
         return mapToResponse(
                 roomType,
@@ -126,6 +115,11 @@ public class AvailabilityService {
             AvailabilityResponseDTO response) {
 
         String message;
+        RoomType roomType =
+                roomTypeRepository.findById(response.getRoomTypeId()).orElseThrow(() ->
+                new RuntimeException(
+                        "Room Type not found with id: "
+                                + response.getRoomTypeId()));
 
         if (!response.isAvailable()) {
 
@@ -139,7 +133,7 @@ public class AvailabilityService {
 
         } else {
 
-            message = "Available";
+            message = "Room Available";
         }
 
         return AvailabilityCustomerResponseDTO.builder()
@@ -153,8 +147,8 @@ public class AvailabilityService {
                 .available(response.isAvailable())
 
                 // Fetch these from RoomType if present
-                //.capacity(...)
-                //.pricePerNight(...)
+                .capacity(roomType.getCapacity())
+                .pricePerNight(roomType.getPricePerNight())
 
                 .availabilityMessage(message)
 

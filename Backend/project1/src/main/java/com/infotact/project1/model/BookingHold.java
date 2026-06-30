@@ -24,7 +24,6 @@ import java.time.LocalDateTime;
 // Stored in Redis for 5 minutes
 @RedisHash(value = "bookingHold", timeToLive = 300)
 public class BookingHold {
-
     @Id
     private String holdId;
 
@@ -46,4 +45,7 @@ public class BookingHold {
 
     // Audit timestamp
     private LocalDateTime createdAt;
+
+    // Reservation associated with this booking hold
+    private Long reservationId;
 }

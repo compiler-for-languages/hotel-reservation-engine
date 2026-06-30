@@ -25,38 +25,55 @@ public class RoomAssignment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long assignmentId;
 
-    // Reservation receiving the room allocation
     @OneToOne
-    @JoinColumn(name = "reservation_id", nullable = false, unique = true)
+    @JoinColumn(name = "reservation_id",
+            nullable = false,
+            unique = true)
     private Reservation reservation;
 
-    // Physical room assigned to the reservation
     @ManyToOne
-    @JoinColumn(name = "room_id", nullable = false)
+    @JoinColumn(name = "room_id",
+            nullable = false)
     private Room room;
 
-    // Receptionist/Admin who performed the assignment
-    @ManyToOne
-    @JoinColumn(name = "assigned_by", nullable = false)
-    private User assignedBy;
 
-    // Time when the room was allotted
+
+    /*
+     * When receptionist allotted the room.
+     */
     @Column(nullable = false)
     private LocalDateTime assignedAt;
 
-    // Tracks the room assignment lifecycle
+    /*
+     * Actual guest arrival time.
+     * Set when receptionist presses Check-In.
+     */
+    private LocalDateTime actualCheckIn;
+
+    /*
+     * Actual guest departure time.
+     * Set during Check-Out.
+     */
+    private LocalDateTime actualCheckOut;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private AssignmentStatus status;
 
-    // Automatically managed audit timestamp
+    @Column(length = 500)
+    private String remarks;
+    /*receptionist writes remarks
+    Late Check-In
+    VIP Guest
+     */
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    // Populate timestamps when assignment is created
     @PrePersist
     public void onCreate() {
-        this.assignedAt = LocalDateTime.now();
         this.createdAt = LocalDateTime.now();
     }
+
+
 }

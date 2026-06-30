@@ -84,7 +84,7 @@ public class AuthService {
         }
 
         if (!passwordEncoder.matches(
-                requestDTO.getPassword(),
+                requestDTO.getPassword(),   // Once again , while checking , password is encrypted by Bcrypt, there is no concept of decrypting
                 user.getPasswordHash())) {
 
             throw new RuntimeException(

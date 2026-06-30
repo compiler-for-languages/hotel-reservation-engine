@@ -7,12 +7,55 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
+/*
+ * Repository responsible for Guest database operations.
+ *
+ * Provides CRUD functionality for guest records
+ * and custom query methods related to reservations.
+ *
+ * Each guest belongs to a reservation and represents
+ * an individual staying under that booking.
+ */
 @Repository
 
-// JpaRepository provides built-in CRUD operations
+/*
+ * JpaRepository provides:
+ *
+ * save()
+ * findById()
+ * findAll()
+ * delete()
+ * deleteById()
+ * existsById()
+ *
+ * Entity Type : Guest
+ * Primary Key : Long (guestId)
+ */
 public interface GuestRepository
         extends JpaRepository<Guest, Long> {
 
-    // Retrieve guests belonging to a reservation
+    /*
+     * Retrieves all guests associated with a reservation.
+     *
+     * Example:
+     * Reservation #25
+     *      ↓
+     * Guest 1
+     * Guest 2
+     * Guest 3
+     *
+     * Spring Data JPA automatically generates:
+     *
+     * SELECT *
+     * FROM guests
+     * WHERE reservation_id = ?
+     */
     List<Guest> findByReservation(Reservation reservation);
+
+    /*
+     * Counts the number of guests entered
+     * for a reservation.
+     */
+    long countByReservation(
+            Reservation reservation);
 }

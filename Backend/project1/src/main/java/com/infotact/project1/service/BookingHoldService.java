@@ -12,8 +12,10 @@ import com.infotact.project1.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.UUID;
+
+import java.util.stream.StreamSupport;
 
 @Service
 
@@ -21,18 +23,20 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class BookingHoldService {
 
-    // Dependency remains immutable after injection
+    // Redis repository storing temporary booking holds
     private final BookingHoldRepository bookingHoldRepository;
 
-    // Dependency remains immutable after injection
+    // Repository used to validate customer existence
     private final UserRepository userRepository;
 
-    // Dependency remains immutable after injection
+    // Repository used to validate room type existence
     private final RoomTypeRepository roomTypeRepository;
 
+    // Creates a temporary booking hold with a five-minute expiration
     public BookingHoldResponseDTO createHold(
             BookingHoldRequestDTO requestDTO) {
 
+        // Validate customer
         User user = userRepository.findById(
                         requestDTO.getUserId())
                 .orElseThrow(() ->
@@ -40,6 +44,7 @@ public class BookingHoldService {
                                 "User not found with id: "
                                         + requestDTO.getUserId()));
 
+        // Validate room type
         RoomType roomType = roomTypeRepository.findById(
                         requestDTO.getRoomTypeId())
                 .orElseThrow(() ->
@@ -47,7 +52,7 @@ public class BookingHoldService {
                                 "Room Type not found with id: "
                                         + requestDTO.getRoomTypeId()));
 
-        // Validate reservation dates
+        // Ensure valid booking dates
         if (!requestDTO.getCheckInDate()
                 .isBefore(requestDTO.getCheckOutDate())) {
 
@@ -55,38 +60,52 @@ public class BookingHoldService {
                     "Check-in date must be before check-out date");
         }
 
+        // Create new booking hold
         BookingHold bookingHold = new BookingHold();
 
+        // Use reservation id as Redis key.
+        // Makes it easy to identify the reservation when the key expires.
         bookingHold.setHoldId(
-                UUID.randomUUID().toString());
+                requestDTO.getReservationId().toString());
 
+        // Store customer reference
         bookingHold.setUserId(
                 user.getUserId());
 
+        // Store room type reference
         bookingHold.setRoomTypeId(
                 roomType.getRoomTypeId());
 
+        bookingHold.setReservationId(
+                requestDTO.getReservationId());
+
+        // Store booking period
         bookingHold.setCheckInDate(
                 requestDTO.getCheckInDate());
 
         bookingHold.setCheckOutDate(
                 requestDTO.getCheckOutDate());
 
+        // Newly created hold starts in ACTIVE state
         bookingHold.setStatus(
                 BookingHoldStatus.ACTIVE);
 
+        // Record creation timestamp
         bookingHold.setCreatedAt(
                 LocalDateTime.now());
 
+        // Automatically expire hold after five minutes
         bookingHold.setExpiresAt(
                 LocalDateTime.now().plusMinutes(5));
 
+        // Persist booking hold in Redis
         BookingHold savedHold =
                 bookingHoldRepository.save(bookingHold);
 
         return mapToResponse(savedHold);
     }
 
+    // Retrieves booking hold using its unique identifier
     public BookingHoldResponseDTO getHoldById(
             String holdId) {
 
@@ -100,6 +119,7 @@ public class BookingHoldService {
         return mapToResponse(bookingHold);
     }
 
+    // Marks an active booking hold as cancelled
     public void cancelHold(
             String holdId) {
 
@@ -114,6 +134,16 @@ public class BookingHoldService {
                 BookingHoldStatus.CANCELLED);
 
         bookingHoldRepository.save(bookingHold);
+    }
+
+    // Release active booking hold after payment
+    // Release active booking hold using reservation id
+    public void releaseActiveHold(
+            Long reservationId) {
+
+        // Reservation id is also used as the Redis key
+        bookingHoldRepository.deleteById(
+                reservationId.toString());
     }
 
     // Entity → DTO mapper
