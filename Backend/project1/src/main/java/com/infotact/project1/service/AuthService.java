@@ -94,7 +94,7 @@ public class AuthService {
         String token =
                 jwtService.generateToken(
 
-                        user.getEmail());
+                        user);
 
         return new LoginResponseDTO(token);
     }
