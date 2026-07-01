@@ -15,7 +15,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
  * Responsibilities:
  * -> Defines API access rules
  * -> Configures JWT authentication
- * -> Regsiters security filters
+ * -> Registers security filters
  * -> Controls which endpoints require authentication
  * -> Creates AuthenticationManager bean
  */
@@ -77,49 +77,72 @@ public class SecurityConfig {
 //                )
                 .authorizeHttpRequests(auth -> auth
 
-                        // Public APIs
-                        .requestMatchers(
-                                "/api/auth/**",
-                                "/swagger-ui/**",
-                                "/swagger-ui.html",
-                                "/v3/api-docs/**"
-                        ).permitAll()
+                                // ---------------- PUBLIC ----------------
 
-                        // ---------------- ADMIN ----------------
+                                .requestMatchers(
+                                        "/api/auth/**",
+                                        "/swagger-ui/**",
+                                        "/swagger-ui.html",
+                                        "/v3/api-docs/**"
+                                ).permitAll()
 
-                        .requestMatchers("/api/users/**")
-                        .hasRole("ADMIN")
+                                // ---------------- ADMIN ----------------
 
-                        .requestMatchers("/api/room/**")
-                        .hasRole("ADMIN")
+                                .requestMatchers("/api/admin/users/**")
+                                .hasRole("ADMIN")
 
-                        .requestMatchers("/api/roomtype/**")
-                        .hasRole("ADMIN")
+                                .requestMatchers("/api/admin/room/**")
+                                .hasRole("ADMIN")
 
-                        // ---------------- RECEPTION ----------------
+                                .requestMatchers("/api/admin/roomtype/**")
+                                .hasRole("ADMIN")
 
-                        .requestMatchers("/api/reception/**")
-                        .hasAnyRole("ADMIN", "RECEPTIONIST")
+                                // ---------------- RECEPTION ----------------
 
-                        // ---------------- CUSTOMER OPERATIONS ----------------
+                                .requestMatchers("/api/reception/**")
+                                .hasRole("RECEPTIONIST")
 
-                        .requestMatchers(
-                                "/api/reservation/**",
-                                "/api/payment/**",
-                                "/api/guest/**",
-                                "/api/availability/**",
-                                "/api/bookinghold/**"
+                                // ---------------- AVAILABILITY ----------------
+
+                                .requestMatchers("/api/availability/**")
+                                .hasAnyRole(
+                                        "ADMIN",
+                                        "RECEPTIONIST",
+                                        "CUSTOMER"
+                                )
+
+                                // ---------------- RESERVATION ----------------
+
+                                .requestMatchers("/api/reservation/**")
+                                .hasAnyRole(
+                                        "CUSTOMER",
+                                        "RECEPTIONIST"
+                                )
+
+                                // ---------------- PAYMENT ----------------
+
+                                .requestMatchers("/api/payment/**")
+                                .hasAnyRole(
+                                        "CUSTOMER",
+                                        "RECEPTIONIST"
+                                )
+
+                                // ---------------- GUEST ----------------
+
+                                .requestMatchers("/api/guest/**")
+                                .hasAnyRole(
+                                        "CUSTOMER",
+                                        "RECEPTIONIST"
+                                )
+
+                                // ---------------- DEVELOPMENT ----------------
+
+                                .requestMatchers("/api/lock/**")
+                                .permitAll()
+
+                                .anyRequest()
+                                .authenticated()
                         )
-                        .hasAnyRole(
-                                "ADMIN",
-                                "RECEPTIONIST",
-                                 "CUSTOMER"
-                        )
-                        .requestMatchers("api/lock/**")
-                        .permitAll()
-                        .anyRequest().authenticated()
-                )
-
                 /*
                 * Insert JWT filter before Spring's default
                 * UsernamePasswordAuthenticationFilter
