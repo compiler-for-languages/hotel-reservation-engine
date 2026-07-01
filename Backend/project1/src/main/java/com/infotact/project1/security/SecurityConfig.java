@@ -50,21 +50,25 @@ public class SecurityConfig {
                                 "/v3/api-docs/**"
                         ).permitAll()
 
-                        // ---------------- ADMIN ----------------
+                                .requestMatchers(
+                                        "/api/auth/**",
+                                        "/swagger-ui/**",
+                                        "/swagger-ui.html",
+                                        "/v3/api-docs/**"
+                                ).permitAll()
 
-                        .requestMatchers("/api/users/**")
-                        .hasRole("ADMIN")
+                                // ---------------- ADMIN ----------------
 
-                        .requestMatchers("/api/room/**")
-                        .hasRole("ADMIN")
+                                .requestMatchers("/api/admin/users/**")
+                                .hasRole("ADMIN")
 
-                        .requestMatchers("/api/roomtype/**")
-                        .hasRole("ADMIN")
+                                .requestMatchers("/api/admin/room/**")
+                                .hasRole("ADMIN")
 
-                        // ---------------- RECEPTION ----------------
+                                .requestMatchers("/api/admin/roomtype/**")
+                                .hasRole("ADMIN")
 
-                        .requestMatchers("/api/reception/**")
-                        .hasAnyRole("ADMIN", "RECEPTIONIST")
+                                // ---------------- RECEPTION ----------------
 
                         // ---------------- CUSTOMER / COMMON ----------------
 
