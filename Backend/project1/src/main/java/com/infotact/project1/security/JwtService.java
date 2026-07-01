@@ -1,5 +1,6 @@
 package com.infotact.project1.security;
 
+import com.infotact.project1.model.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -10,6 +11,8 @@ import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.function.Function;
+import java.util.HashMap;
+import java.util.Map;
 
 /*
  * JWT utility service.
@@ -46,27 +49,37 @@ public class JwtService {
      * - Expiration timestamp
      * - Digital signature
      */
-    public String generateToken(String email) {
 
-        //JWT token = header + payload + signature
-        return Jwts.builder() // automatically creates header
-                // Stores authenticated user's email
-                .subject(email) // payload component
 
-                // Token creation time
-                .issuedAt(new Date()) // payload component
+    public String generateToken(User user) {
 
-                // Token expiration time
+        Map<String, Object> claims = new HashMap<>();
+
+        claims.put("userId", user.getUserId());
+
+        claims.put("role", user.getRole().name());
+
+        claims.put("firstName", user.getFirstName());
+
+        claims.put("lastName", user.getLastName());
+
+        return Jwts.builder()
+
+                .claims(claims)
+
+                .subject(user.getEmail())
+
+                .issuedAt(new Date())
+
                 .expiration(
                         new Date(
                                 System.currentTimeMillis()
-                                        + jwtExpiration // payload component
+                                        + jwtExpiration
                         )
                 )
-                // Sign token using secret key
-                .signWith(getSigningKey()) // signature component
 
-                // Generate final JWT string
+                .signWith(getSigningKey())
+
                 .compact();
     }
 
@@ -84,6 +97,31 @@ public class JwtService {
         );
     }
 
+    public String extractRole(String token) {
+
+        return extractClaim(
+                token,
+                claims -> claims.get("role", String.class)
+        );
+    }
+
+    public Long extractUserId(String token) {
+
+        Integer id = extractClaim(
+                token,
+                claims -> claims.get("userId", Integer.class)
+        );
+
+        return id.longValue();
+    }
+
+    public String extractFirstName(String token) {
+
+        return extractClaim(
+                token,
+                claims -> claims.get("firstName", String.class)
+        );
+    }
     /*
      * Validates token ownership and expiration.
      *
