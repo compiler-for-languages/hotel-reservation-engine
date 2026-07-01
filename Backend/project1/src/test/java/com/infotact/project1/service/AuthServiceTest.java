@@ -208,7 +208,7 @@ class AuthServiceTest {
                 user.getPasswordHash()))
                 .thenReturn(true);
 
-        when(jwtService.generateToken(user.getEmail()))
+        when(jwtService.generateToken(user))
                 .thenReturn("jwt-token");
 
         LoginResponseDTO response =
@@ -222,7 +222,7 @@ class AuthServiceTest {
                 request.getPassword(),
                 user.getPasswordHash());
 
-        verify(jwtService).generateToken(user.getEmail());
+        verify(jwtService).generateToken(user);
     }
 
     /*
@@ -291,7 +291,7 @@ class AuthServiceTest {
      * Verifies that login fails when
      * an incorrect password is provided.
      */
-    
+
     @Test
     void login_ShouldThrowException_WhenPasswordIsIncorrect() {
 
