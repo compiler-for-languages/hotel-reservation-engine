@@ -1,12 +1,14 @@
 package com.infotact.project1.integration;
 
-import com.infotact.project1.integration.config.TestRedisConfig;
 import org.junit.jupiter.api.BeforeEach;
+import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,11 +32,15 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Transactional
 
-@Import(TestRedisConfig.class)
+
 public abstract class AbstractIntegrationTest {
 
     @Autowired
     protected MockMvc mockMvc;
+
+    @MockitoBean
+    protected RedissonClient redissonClient;
+
 
     @BeforeEach
     void setUp() {
