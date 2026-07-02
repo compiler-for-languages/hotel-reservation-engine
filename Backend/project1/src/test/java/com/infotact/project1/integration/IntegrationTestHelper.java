@@ -20,7 +20,8 @@ import com.infotact.project1.enums.PaymentMethod;
 
 import java.time.LocalDate;
 import com.infotact.project1.dto.request.PaymentRequestDTO;
-
+import com.infotact.project1.dto.request.RoomRequestDTO;
+import com.infotact.project1.enums.RoomStatus;
 
 @Component
 @RequiredArgsConstructor
@@ -256,6 +257,62 @@ public class IntegrationTestHelper {
                 objectMapper.readTree(response);
 
         return json.get("paymentId")
+                .asLong();
+    }
+
+    /*
+     * Creates an available room
+     * for the given room type and
+     * returns the generated room id.
+     */
+    public Long createRoom(
+            String adminToken,
+            Long roomTypeId)
+            throws Exception {
+
+        RoomRequestDTO request =
+                new RoomRequestDTO();
+
+        request.setRoomNumber(
+                "R"
+                        + System.nanoTime());
+
+        request.setRoomTypeId(
+                roomTypeId);
+
+        request.setFloorNumber(
+                1);
+
+        request.setRoomStatus(
+                RoomStatus.AVAILABLE);
+
+        String response =
+                mockMvc.perform(
+
+                                post("/api/admin/room/save")
+
+                                        .header(
+                                                "Authorization",
+                                                "Bearer " + adminToken)
+
+                                        .contentType(
+                                                MediaType.APPLICATION_JSON)
+
+                                        .content(
+                                                objectMapper.writeValueAsString(
+                                                        request)))
+
+                        .andReturn()
+
+                        .getResponse()
+
+                        .getContentAsString();
+
+        JsonNode json =
+                objectMapper.readTree(
+                        response);
+
+        return json.get("roomId")
                 .asLong();
     }
 
