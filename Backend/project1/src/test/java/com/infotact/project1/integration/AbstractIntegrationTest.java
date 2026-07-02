@@ -49,6 +49,9 @@ public abstract class AbstractIntegrationTest {
     @Autowired
     protected ObjectMapper objectMapper;
 
+    @Autowired
+    protected IntegrationTestHelper helper;
+
     protected String adminToken;
 
 
@@ -111,4 +114,6 @@ public abstract class AbstractIntegrationTest {
 
         return adminToken;
     }
+
+
 }
