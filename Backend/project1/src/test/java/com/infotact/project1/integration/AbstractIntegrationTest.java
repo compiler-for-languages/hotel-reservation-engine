@@ -5,12 +5,17 @@ import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.infotact.project1.dto.request.LoginRequestDTO;
+import org.springframework.http.MediaType;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /*
  * Base class for all integration tests.
@@ -41,6 +46,11 @@ public abstract class AbstractIntegrationTest {
     @MockitoBean
     protected RedissonClient redissonClient;
 
+    @Autowired
+    protected ObjectMapper objectMapper;
+
+    protected String adminToken;
+
 
     @BeforeEach
     void setUp() {
@@ -56,5 +66,49 @@ public abstract class AbstractIntegrationTest {
          * - Cleaning resources
          * - Resetting mocks
          */
+    }
+
+    /*
+     * Authenticates the default administrator
+     * and returns a valid JWT token.
+     */
+    protected String getAdminToken() throws Exception {
+
+        if (adminToken != null) {
+            return adminToken;
+        }
+
+        LoginRequestDTO loginRequest =
+                new LoginRequestDTO();
+
+        loginRequest.setEmail("admin@gmail.com");
+        loginRequest.setPassword("admin123");
+
+        String response = mockMvc.perform(
+
+                        post("/api/auth/login")
+
+                                .contentType(
+                                        MediaType.APPLICATION_JSON)
+
+                                .content(
+                                        objectMapper.writeValueAsString(
+                                                loginRequest)))
+
+                .andExpect(status().isOk())
+
+                .andReturn()
+
+                .getResponse()
+
+                .getContentAsString();
+
+        JsonNode json =
+                objectMapper.readTree(response);
+
+        adminToken =
+                json.get("token").asText();
+
+        return adminToken;
     }
 }
