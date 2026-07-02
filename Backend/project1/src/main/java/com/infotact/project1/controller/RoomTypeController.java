@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/roomtype")
+@RequestMapping("/api/admin/roomtype")
 
 // Lombok generates constructor for final fields
 @RequiredArgsConstructor

@@ -3,44 +3,79 @@ package com.infotact.project1.security;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.util.Arrays;
+/*
+ * Central security configuration
+ * Responsibilities:
+ * -> Defines API access rules
+ * -> Configures JWT authentication
+ * -> Regsiters security filters
+ * -> Controls which endpoints require authentication
+ * -> Creates AuthenticationManager bean
+ */
+
 
 @Configuration
+
+/*
+* Enables method - level security annotations such as :
+* @PreAuthorize(...)
+* @PostAuthorize(...)
+* @Secured(...)
+ */
 @EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
+    /*
+    * Custom JWT filter responsible for:
+    * Extracting JWT token from authorization header
+    * Validating token
+    * Authenticating the user
+     */
+
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
+    // Defines security rules for incoming HTTP requests
     @Bean
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http)
             throws Exception {
 
         http
-
-                // Enable CORS
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-
-                // Disable CSRF for JWT authentication
+                /*
+                * Disable CSRF protection
+                * Since this project uses JWT-based authentication
+                * instead of session-based authentication,
+                * CSRF protection is unnecessary
+                 */
                 .csrf(csrf -> csrf.disable())
-
+//
+//                .authorizeHttpRequests(auth -> auth
+//
+//                        .requestMatchers(
+//                                "/api/auth/**"   // publicly accessible
+//                        ).permitAll()
+//
+//                        .requestMatchers( //swagger documentation endpoints are publicly
+//                                            // accessible
+//                                "/swagger-ui/**",
+//                                "/swagger-ui.html",
+//                                "/v3/api-docs/**"
+//                        ).permitAll()
+//                         //temporary, Permitting all for development stage
+//                        .anyRequest()//.permitAll()
+//                    .authenticated()
+//                        //except the register and login API, Every other API needs Bearer token if .authenticated written,
+//
+//                )
                 .authorizeHttpRequests(auth -> auth
-
-                        // Allow browser preflight requests
-                        .requestMatchers(HttpMethod.OPTIONS, "/**")
-                        .permitAll()
 
                         // Public APIs
                         .requestMatchers(
@@ -66,7 +101,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/reception/**")
                         .hasAnyRole("ADMIN", "RECEPTIONIST")
 
-                        // ---------------- CUSTOMER / COMMON ----------------
+                        // ---------------- CUSTOMER OPERATIONS ----------------
 
                         .requestMatchers(
                                 "/api/reservation/**",
@@ -78,15 +113,19 @@ public class SecurityConfig {
                         .hasAnyRole(
                                 "ADMIN",
                                 "RECEPTIONIST",
-                                "CUSTOMER"
+                                 "CUSTOMER"
                         )
-
-                        .requestMatchers("/api/lock/**")
+                        .requestMatchers("api/lock/**")
                         .permitAll()
-
-                        .anyRequest()
-                        .authenticated()
+                        .anyRequest().authenticated()
                 )
+
+                /*
+                * Insert JWT filter before Spring's default
+                * UsernamePasswordAuthenticationFilter
+                *
+                * * JWT authentication should happen first
+                 */
 
                 .addFilterBefore(
                         jwtAuthenticationFilter,
@@ -96,59 +135,11 @@ public class SecurityConfig {
         return http.build();
     }
 
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-
-        CorsConfiguration configuration = new CorsConfiguration();
-
-        // Frontend URL
-        configuration.setAllowedOriginPatterns(
-                Arrays.asList("http://localhost:5173")
-        );
-
-        configuration.setAllowedMethods(
-                Arrays.asList(
-                        "GET",
-                        "POST",
-                        "PUT",
-                        "PATCH",
-                        "DELETE",
-                        "OPTIONS"
-                )
-        );
-
-        configuration.addAllowedHeader("*");
-
-        configuration.setAllowCredentials(true);
-
-        UrlBasedCorsConfigurationSource source =
-                new UrlBasedCorsConfigurationSource();
-
-        source.registerCorsConfiguration(
-                "/**",
-                configuration
-        );
-
-        return source;
-    }
     /*
- Our frontend runs on
-
-http://localhost:5173
-
-and your backend runs on
-
-http://localhost:8080
-
-These are different origins (different ports).
-
-Browsers enforce the Same-Origin Policy, so by default they block JavaScript from calling another origin
-
-"Use my CORS configuration and allow approved frontend applications to access my backend."
-
-without this
-
-No 'Access-Control-Allow-Origin' header is present
+    * Creates AuthenticationManager bean.
+    *
+    * Used during login to authenticate
+    * Username and password credentials
      */
 
     @Bean
