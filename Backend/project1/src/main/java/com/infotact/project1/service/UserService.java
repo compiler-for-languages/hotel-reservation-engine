@@ -3,10 +3,13 @@ package com.infotact.project1.service;
 import com.infotact.project1.dto.request.UserPatchRequestDTO;
 import com.infotact.project1.dto.request.UserRequestDTO;
 import com.infotact.project1.dto.response.UserResponseDTO;
+import com.infotact.project1.enums.AccountStatus;
 import com.infotact.project1.enums.Role;
 import com.infotact.project1.model.User;
 import com.infotact.project1.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -30,17 +33,13 @@ public class UserService {
         // Prevent duplicate email addresses
         userRepository.findByEmail(requestDTO.getEmail())
                 .ifPresent(user -> {
-                    throw new RuntimeException(
-                            "Email already registered: "
-                                    + requestDTO.getEmail());
+                    throw new RuntimeException("EMAIL_ALREADY_EXISTS");
                 });
 
         // Prevent duplicate phone numbers
         userRepository.findByPhone(requestDTO.getPhone())
                 .ifPresent(user -> {
-                    throw new RuntimeException(
-                            "Phone number already registered: "
-                                    + requestDTO.getPhone());
+                    throw new RuntimeException("PHONE_ALREADY_EXISTS");
                 });
 
         User user = new User();
@@ -78,8 +77,7 @@ public class UserService {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() ->
-                        new RuntimeException(
-                                "User not found with id: " + userId));
+                        new RuntimeException("USER_NOT_FOUND"));
 
         return mapToResponse(user);
     }
@@ -89,8 +87,7 @@ public class UserService {
 
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() ->
-                        new RuntimeException(
-                                "User not found with email: " + email));
+                        new RuntimeException("USER_NOT_FOUND"));
 
         return mapToResponse(user);
     }
@@ -102,8 +99,9 @@ public class UserService {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() ->
-                        new RuntimeException(
-                                "User not found with id: " + userId));
+                        new RuntimeException("USER_NOT_FOUND"));
+
+        authorizeUserUpdate(userId, requestDTO, user);
 
         if (requestDTO.getFirstName() != null) {
             user.setFirstName(requestDTO.getFirstName());
@@ -121,9 +119,7 @@ public class UserService {
                         if (!existingUser.getUserId()
                                 .equals(user.getUserId())) {
 
-                            throw new RuntimeException(
-                                    "Phone number already registered: "
-                                            + requestDTO.getPhone());
+                            throw new RuntimeException("PHONE_ALREADY_EXISTS");
                         }
                     });
 
@@ -143,8 +139,20 @@ public class UserService {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() ->
-                        new RuntimeException(
-                                "User not found with id: " + userId));
+                        new RuntimeException("USER_NOT_FOUND"));
+
+        // Prevent admin from deleting their own account
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.isAuthenticated()) {
+            User currentUser = userRepository.findByEmail(authentication.getName())
+                    .orElse(null);
+            if (currentUser != null
+                    && currentUser.getRole() == Role.ADMIN
+                    && currentUser.getUserId().equals(userId)) {
+                throw new RuntimeException("SELF_DELETE_NOT_ALLOWED");
+            }
+        }
 
         userRepository.delete(user);
     }
@@ -179,5 +187,42 @@ public class UserService {
                 .role(user.getRole())
                 .accountStatus(user.getAccountStatus())
                 .build();
+    }
+
+    private void authorizeUserUpdate(
+            Long targetUserId,
+            UserPatchRequestDTO requestDTO,
+            User targetUser) {
+
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new RuntimeException("AUTHENTICATION_REQUIRED");
+        }
+
+        User currentUser = userRepository.findByEmail(authentication.getName())
+                .orElseThrow(() ->
+                        new RuntimeException("USER_NOT_FOUND"));
+
+        boolean isAdmin = currentUser.getRole() == Role.ADMIN;
+
+        if (isAdmin) {
+            if (currentUser.getUserId().equals(targetUserId)
+                    && requestDTO.getAccountStatus() != null
+                    && requestDTO.getAccountStatus() != AccountStatus.ACTIVE) {
+                throw new RuntimeException("SELF_DEACTIVATE_NOT_ALLOWED");
+            }
+            return;
+        }
+
+        if (!currentUser.getUserId().equals(targetUserId)) {
+            throw new RuntimeException("ACCESS_DENIED");
+        }
+
+        if (requestDTO.getAccountStatus() != null
+                && requestDTO.getAccountStatus() != targetUser.getAccountStatus()) {
+            throw new RuntimeException("ACCESS_DENIED");
+        }
     }
 }

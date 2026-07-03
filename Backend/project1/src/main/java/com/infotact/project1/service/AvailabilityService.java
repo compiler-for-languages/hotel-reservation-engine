@@ -40,16 +40,13 @@ public class AvailabilityService {
                 roomTypeRepository.findById(
                                 requestDTO.getRoomTypeId())
                         .orElseThrow(() ->
-                                new RuntimeException(
-                                        "Room Type not found with id: "
-                                                + requestDTO.getRoomTypeId()));
+                                new RuntimeException("ROOM_TYPE_NOT_FOUND"));
 
         // Validate reservation dates
         if (!requestDTO.getCheckInDate()
                 .isBefore(requestDTO.getCheckOutDate())) {
 
-            throw new RuntimeException(
-                    "Check-in date must be before check-out date");
+            throw new RuntimeException("INVALID_DATE_RANGE");
         }
 
         // Total inventory available for this room type
@@ -117,9 +114,7 @@ public class AvailabilityService {
         String message;
         RoomType roomType =
                 roomTypeRepository.findById(response.getRoomTypeId()).orElseThrow(() ->
-                new RuntimeException(
-                        "Room Type not found with id: "
-                                + response.getRoomTypeId()));
+                new RuntimeException("ROOM_TYPE_NOT_FOUND"));
 
         if (!response.isAvailable()) {
 

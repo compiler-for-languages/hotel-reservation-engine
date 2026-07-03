@@ -40,24 +40,19 @@ public class BookingHoldService {
         User user = userRepository.findById(
                         requestDTO.getUserId())
                 .orElseThrow(() ->
-                        new RuntimeException(
-                                "User not found with id: "
-                                        + requestDTO.getUserId()));
+                        new RuntimeException("USER_NOT_FOUND"));
 
         // Validate room type
         RoomType roomType = roomTypeRepository.findById(
                         requestDTO.getRoomTypeId())
                 .orElseThrow(() ->
-                        new RuntimeException(
-                                "Room Type not found with id: "
-                                        + requestDTO.getRoomTypeId()));
+                        new RuntimeException("ROOM_TYPE_NOT_FOUND"));
 
         // Ensure valid booking dates
         if (!requestDTO.getCheckInDate()
                 .isBefore(requestDTO.getCheckOutDate())) {
 
-            throw new RuntimeException(
-                    "Check-in date must be before check-out date");
+            throw new RuntimeException("INVALID_DATE_RANGE");
         }
 
         // Create new booking hold
@@ -112,9 +107,7 @@ public class BookingHoldService {
         BookingHold bookingHold =
                 bookingHoldRepository.findById(holdId)
                         .orElseThrow(() ->
-                                new RuntimeException(
-                                        "Booking Hold not found with id: "
-                                                + holdId));
+                                new RuntimeException("BOOKING_HOLD_NOT_FOUND"));
 
         return mapToResponse(bookingHold);
     }
@@ -126,9 +119,7 @@ public class BookingHoldService {
         BookingHold bookingHold =
                 bookingHoldRepository.findById(holdId)
                         .orElseThrow(() ->
-                                new RuntimeException(
-                                        "Booking Hold not found with id: "
-                                                + holdId));
+                                new RuntimeException("BOOKING_HOLD_NOT_FOUND"));
 
         bookingHold.setStatus(
                 BookingHoldStatus.CANCELLED);

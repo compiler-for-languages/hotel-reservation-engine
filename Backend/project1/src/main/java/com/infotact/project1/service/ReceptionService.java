@@ -47,23 +47,24 @@ public class ReceptionService {
                 reservationRepository.findById(
                                 requestDTO.getReservationId())
                         .orElseThrow(() ->
-                                new RuntimeException(
-                                        "Reservation not found"));
+                                new RuntimeException("RESERVATION_NOT_FOUND"));
+
+        if (reservation.getReservationStatus() == ReservationStatus.CHECKED_OUT) {
+            throw new RuntimeException("RESERVATION_ALREADY_CHECKED_OUT");
+        }
 
         // Reservation must be confirmed
         if (reservation.getReservationStatus()
                 != ReservationStatus.CONFIRMED) {
 
-            throw new RuntimeException(
-                    "Only confirmed reservations can be assigned a room");
+            throw new RuntimeException("CHECKIN_NOT_ALLOWED");
         }
 
         // Prevent duplicate room assignment
         if (roomAssignmentRepository.existsByReservation(
                 reservation)) {
 
-            throw new RuntimeException(
-                    "Room has already been assigned");
+            throw new RuntimeException("ROOM_ALREADY_ASSIGNED");
         }
 
         // Find available rooms of the reserved room type
@@ -74,8 +75,7 @@ public class ReceptionService {
 
         if (availableRooms.isEmpty()) {
 
-            throw new RuntimeException(
-                    "No available rooms found");
+            throw new RuntimeException("NO_AVAILABLE_ROOM");
         }
 
         // Random room allocation
@@ -119,15 +119,17 @@ public class ReceptionService {
                 reservationRepository.findById(
                                 requestDTO.getReservationId())
                         .orElseThrow(() ->
-                                new RuntimeException(
-                                        "Reservation not found"));
+                                new RuntimeException("RESERVATION_NOT_FOUND"));
+
+        if (reservation.getReservationStatus() == ReservationStatus.CHECKED_OUT) {
+            throw new RuntimeException("RESERVATION_ALREADY_CHECKED_OUT");
+        }
 
         // Reservation must be confirmed
         if (reservation.getReservationStatus()
                 != ReservationStatus.CONFIRMED) {
 
-            throw new RuntimeException(
-                    "Reservation is not eligible for check-in");
+            throw new RuntimeException("CHECKIN_NOT_ALLOWED");
         }
 
         // Fetch room assignment
@@ -135,15 +137,13 @@ public class ReceptionService {
                 roomAssignmentRepository
                         .findByReservation(reservation)
                         .orElseThrow(() ->
-                                new RuntimeException(
-                                        "Room has not been assigned"));
+                                new RuntimeException("ROOM_NOT_ASSIGNED"));
 
         // Prevent duplicate check-in
         if (assignment.getStatus()
                 != AssignmentStatus.ASSIGNED) {
 
-            throw new RuntimeException(
-                    "Guest has already checked in");
+            throw new RuntimeException("ALREADY_CHECKED_IN");
         }
 
         guestService.validateGuestDetailsCompleted(
@@ -183,15 +183,17 @@ public class ReceptionService {
                 reservationRepository.findById(
                                 requestDTO.getReservationId())
                         .orElseThrow(() ->
-                                new RuntimeException(
-                                        "Reservation not found"));
+                                new RuntimeException("RESERVATION_NOT_FOUND"));
+
+        if (reservation.getReservationStatus() == ReservationStatus.CHECKED_OUT) {
+            throw new RuntimeException("RESERVATION_ALREADY_CHECKED_OUT");
+        }
 
         // Reservation must be checked in
         if (reservation.getReservationStatus()
                 != ReservationStatus.CHECKED_IN) {
 
-            throw new RuntimeException(
-                    "Guest is not checked in");
+            throw new RuntimeException("CHECKOUT_NOT_ALLOWED");
         }
 
         // Fetch room assignment
@@ -199,15 +201,13 @@ public class ReceptionService {
                 roomAssignmentRepository
                         .findByReservation(reservation)
                         .orElseThrow(() ->
-                                new RuntimeException(
-                                        "Room assignment not found"));
+                                new RuntimeException("ROOM_NOT_ASSIGNED"));
 
         // Validate assignment status
         if (assignment.getStatus()
                 != AssignmentStatus.CHECKED_IN) {
 
-            throw new RuntimeException(
-                    "Guest has not checked in");
+            throw new RuntimeException("NOT_CHECKED_IN");
         }
 
         // Record actual checkout time
@@ -328,6 +328,9 @@ public class ReceptionService {
 
                             .guestCount(
                                     reservation.getGuestCount())
+
+                            .guestNames(
+                                    formatGuestNames(reservation))
 
                             .checkInDate(
                                     reservation.getCheckInDate())
@@ -490,6 +493,12 @@ public class ReceptionService {
                             .actualCheckIn(
                                     assignment.getActualCheckIn())
 
+                            .guestCount(
+                                    reservation.getGuestCount())
+
+                            .guestNames(
+                                    formatGuestNames(reservation))
+
                             .build();
 
                 })
@@ -550,10 +559,13 @@ public class ReceptionService {
                 .build();
     }
 
+    private String formatGuestNames(Reservation reservation) {
 
-
-
-
-
+        return guestRepository.findByReservation(reservation)
+                .stream()
+                .map(guest -> guest.getFirstName() + " " + guest.getLastName())
+                .reduce((left, right) -> left + ", " + right)
+                .orElse("");
+    }
 
 }

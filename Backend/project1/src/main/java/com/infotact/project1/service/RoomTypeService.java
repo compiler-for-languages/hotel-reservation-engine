@@ -3,6 +3,7 @@ package com.infotact.project1.service;
 import com.infotact.project1.dto.request.RoomTypeRequestDTO;
 import com.infotact.project1.dto.response.RoomTypeResponseDTO;
 import com.infotact.project1.model.RoomType;
+import com.infotact.project1.repository.RoomRepository;
 import com.infotact.project1.repository.RoomTypeRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -16,6 +17,7 @@ import java.util.List;
 public class RoomTypeService {
     //No necessity of autowired, The constructors are injected using import lombok.RequiredArgsConstructor;
     private final RoomTypeRepository roomTypeRepository;
+    private final RoomRepository roomRepository;
 
     public RoomTypeResponseDTO createRoomType(RoomTypeRequestDTO requestDTO) {
 
@@ -23,8 +25,7 @@ public class RoomTypeService {
                         requestDTO.getName())
                 .ifPresent(room -> {
 
-                    throw new RuntimeException(
-                            "Room type already exists.");
+                    throw new RuntimeException("ROOM_TYPE_EXISTS");
 
                 });
 
@@ -58,7 +59,7 @@ public class RoomTypeService {
 
                 // Prevents null object access
                 .orElseThrow(() ->
-                        new RuntimeException("Room Type not found with id: " + roomTypeId));
+                        new RuntimeException("ROOM_TYPE_NOT_FOUND"));
 
         return mapToResponse(roomType);
     }
@@ -69,7 +70,7 @@ public class RoomTypeService {
 
                 // Prevents null object access
                 .orElseThrow(() ->
-                        new RuntimeException("Room Type not found with name: " + name));
+                        new RuntimeException("ROOM_TYPE_NOT_FOUND"));
 
         return mapToResponse(roomType);
     }
@@ -80,7 +81,11 @@ public class RoomTypeService {
 
                 // Prevents deletion of non-existent records
                 .orElseThrow(() ->
-                        new RuntimeException("Room Type not found with id: " + roomTypeId));
+                        new RuntimeException("ROOM_TYPE_NOT_FOUND"));
+
+        if (roomRepository.countByRoomType(roomType) > 0) {
+            throw new RuntimeException("ROOM_TYPE_DELETE_NOT_ALLOWED");
+        }
 
         roomTypeRepository.delete(roomType);
     }
@@ -114,7 +119,7 @@ public class RoomTypeService {
 
                 // Prevents updates on non-existent records
                 .orElseThrow(() ->
-                        new RuntimeException("Room Type not found with id: " + roomTypeId));
+                        new RuntimeException("ROOM_TYPE_NOT_FOUND"));
 
         // Update only supplied fields
 

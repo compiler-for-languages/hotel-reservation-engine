@@ -39,17 +39,17 @@ public class PaymentService {
                 reservationRepository.findById(
                                 requestDTO.getReservationId())
                         .orElseThrow(() ->
-                                new RuntimeException(
-                                        "Reservation not found with id: "
-                                                + requestDTO.getReservationId()));
+                        new RuntimeException("RESERVATION_NOT_FOUND"));
+
+        if (reservation.getReservationStatus() == ReservationStatus.CHECKED_OUT) {
+            throw new RuntimeException("RESERVATION_ALREADY_CHECKED_OUT");
+        }
 
         // Prevent duplicate payment creation
         if (paymentRepository.findByReservation(
                 reservation).isPresent()) {
 
-            throw new RuntimeException(
-                    "Payment already exists for reservation: "
-                            + reservation.getReservationId());
+            throw new RuntimeException("PAYMENT_ALREADY_EXISTS");
         }
 
         BigDecimal amount =
@@ -107,9 +107,7 @@ public class PaymentService {
 
                 // Prevents access to non-existent records
                 .orElseThrow(() ->
-                        new RuntimeException(
-                                "Payment not found with id: "
-                                        + paymentId));
+                        new RuntimeException("PAYMENT_NOT_FOUND"));
 
         return mapToResponse(payment);
     }
@@ -122,17 +120,13 @@ public class PaymentService {
                 reservationRepository.findById(
                                 reservationId)
                         .orElseThrow(() ->
-                                new RuntimeException(
-                                        "Reservation not found with id: "
-                                                + reservationId));
+                        new RuntimeException("RESERVATION_NOT_FOUND"));
 
         Payment payment =
                 paymentRepository.findByReservation(
                                 reservation)
                         .orElseThrow(() ->
-                                new RuntimeException(
-                                        "Payment not found for reservation id: "
-                                                + reservationId));
+                        new RuntimeException("PAYMENT_NOT_FOUND"));
 
         return mapToResponse(payment);
     }
@@ -155,16 +149,13 @@ public class PaymentService {
         Payment payment =
                 paymentRepository.findById(paymentId)
                         .orElseThrow(() ->
-                                new RuntimeException(
-                                        "Payment not found with id: "
-                                                + paymentId));
+                        new RuntimeException("PAYMENT_NOT_FOUND"));
 
         // Prevent deletion of completed payments
         if (payment.getPaymentStatus()
                 == PaymentStatus.SUCCESS) {
 
-            throw new RuntimeException(
-                    "Successful payments cannot be deleted");
+            throw new RuntimeException("PAYMENT_DELETE_NOT_ALLOWED");
         }
 
         paymentRepository.delete(payment);
@@ -178,15 +169,12 @@ public class PaymentService {
         Payment payment =
                 paymentRepository.findById(paymentId)
                         .orElseThrow(() ->
-                                new RuntimeException(
-                                        "Payment not found with id: "
-                                                + paymentId));
+                        new RuntimeException("PAYMENT_NOT_FOUND"));
 
         if (payment.getPaymentStatus()
                 != PaymentStatus.PENDING) {
 
-            throw new RuntimeException(
-                    "Only PENDING payments can be moved to PROCESSING");
+            throw new RuntimeException("PAYMENT_START_INVALID");
         }
 
         payment.setPaymentStatus(
@@ -213,15 +201,12 @@ public class PaymentService {
         Payment payment =
                 paymentRepository.findById(paymentId)
                         .orElseThrow(() ->
-                                new RuntimeException(
-                                        "Payment not found with id: "
-                                                + paymentId));
+                        new RuntimeException("PAYMENT_NOT_FOUND"));
 
         if (payment.getPaymentStatus()
                 != PaymentStatus.PROCESSING) {
 
-            throw new RuntimeException(
-                    "Only PROCESSING payments can be marked as SUCCESS");
+            throw new RuntimeException("PAYMENT_SUCCESS_INVALID");
         }
 
         payment.setPaymentStatus(
@@ -264,15 +249,12 @@ public class PaymentService {
         Payment payment =
                 paymentRepository.findById(paymentId)
                         .orElseThrow(() ->
-                                new RuntimeException(
-                                        "Payment not found with id: "
-                                                + paymentId));
+                        new RuntimeException("PAYMENT_NOT_FOUND"));
 
         if (payment.getPaymentStatus()
                 != PaymentStatus.PROCESSING) {
 
-            throw new RuntimeException(
-                    "Only PROCESSING payments can be marked as FAILED");
+            throw new RuntimeException("PAYMENT_FAILED_INVALID");
         }
 
         payment.setPaymentStatus(
@@ -300,15 +282,12 @@ public class PaymentService {
         Payment payment =
                 paymentRepository.findById(paymentId)
                         .orElseThrow(() ->
-                                new RuntimeException(
-                                        "Payment not found with id: "
-                                                + paymentId));
+                        new RuntimeException("PAYMENT_NOT_FOUND"));
 
         if (payment.getPaymentStatus()
                 != PaymentStatus.SUCCESS) {
 
-            throw new RuntimeException(
-                    "Only SUCCESS payments can be refunded");
+            throw new RuntimeException("PAYMENT_REFUND_INVALID");
         }
 
         payment.setPaymentStatus(

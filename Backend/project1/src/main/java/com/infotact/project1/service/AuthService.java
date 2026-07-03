@@ -10,7 +10,8 @@ import com.infotact.project1.model.User;
 import com.infotact.project1.repository.UserRepository;
 import com.infotact.project1.security.JwtService;
 import lombok.RequiredArgsConstructor;
-
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -29,17 +30,13 @@ public class AuthService {
         // Prevent duplicate email addresses
         userRepository.findByEmail(requestDTO.getEmail())
                 .ifPresent(user -> {
-                    throw new RuntimeException(
-                            "Email already registered: "
-                                    + requestDTO.getEmail());
+                    throw new RuntimeException("EMAIL_ALREADY_EXISTS");
                 });
 
         // Prevent duplicate phone numbers
         userRepository.findByPhone(requestDTO.getPhone())
                 .ifPresent(user -> {
-                    throw new RuntimeException(
-                            "Phone number already registered: "
-                                    + requestDTO.getPhone());
+                    throw new RuntimeException("PHONE_ALREADY_EXISTS");
                 });
 
         User user = new User();
@@ -73,22 +70,19 @@ public class AuthService {
                         requestDTO.getEmail())
 
                 .orElseThrow(() ->
-                        new RuntimeException(
-                                "Invalid email or password"));
+                        new RuntimeException("INVALID_CREDENTIALS"));
 
         if (user.getAccountStatus()
                 != AccountStatus.ACTIVE) {
 
-            throw new RuntimeException(
-                    "Account is inactive");
+            throw new RuntimeException("ACCOUNT_INACTIVE");
         }
 
         if (!passwordEncoder.matches(
                 requestDTO.getPassword(),   // Once again , while checking , password is encrypted by Bcrypt, there is no concept of decrypting
                 user.getPasswordHash())) {
 
-            throw new RuntimeException(
-                    "Invalid email or password");
+            throw new RuntimeException("INVALID_CREDENTIALS");
         }
 
         String token =
@@ -97,6 +91,22 @@ public class AuthService {
                         user);
 
         return new LoginResponseDTO(token);
+    }
+
+    public UserResponseDTO getCurrentUser() {
+
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new RuntimeException("AUTHENTICATION_REQUIRED");
+        }
+
+        User user = userRepository.findByEmail(authentication.getName())
+                .orElseThrow(() ->
+                        new RuntimeException("USER_NOT_FOUND"));
+
+        return mapToResponse(user);
     }
 
 
