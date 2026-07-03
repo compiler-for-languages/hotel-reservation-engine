@@ -46,10 +46,9 @@ class ReceptionIntegrationTest
                         adminToken);
 
         Long paymentId =
-                helper.createPayment(
+                helper.getPaymentIdByReservation(
                         adminToken,
-                        reservationId,
-                        PaymentMethod.UPI);
+                        reservationId);
 
         // Confirm reservation
         mockMvc.perform(
@@ -123,10 +122,9 @@ class ReceptionIntegrationTest
                         adminToken);
 
         Long paymentId =
-                helper.createPayment(
+                helper.getPaymentIdByReservation(
                         adminToken,
-                        reservationId,
-                        PaymentMethod.UPI);
+                        reservationId);
 
         // Confirm reservation
         mockMvc.perform(
@@ -245,10 +243,9 @@ class ReceptionIntegrationTest
                         adminToken);
 
         Long paymentId =
-                helper.createPayment(
+                helper.getPaymentIdByReservation(
                         adminToken,
-                        reservationId,
-                        PaymentMethod.UPI);
+                        reservationId);
 
         // Confirm reservation
         mockMvc.perform(

@@ -76,7 +76,6 @@ public class ReservationService {
             throw new RuntimeException("Room capacity exceeded.");
         }
 
-
         // Acquire distributed lock to prevent concurrent bookings for the same room type
         String lockName =
                 "roomType:" + roomType.getRoomTypeId();
