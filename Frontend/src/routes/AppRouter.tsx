@@ -18,7 +18,6 @@ const CustomerProfilePage = lazy(() => import("@/pages/customer/CustomerProfileP
 const ReceptionistDashboardPage = lazy(() => import("@/pages/receptionist/ReceptionistDashboardPage"));
 const TodayArrivalsPage = lazy(() => import("@/pages/receptionist/TodayArrivalsPage"));
 const TodayDeparturesPage = lazy(() => import("@/pages/receptionist/TodayDeparturesPage"));
-const CurrentGuestsPage = lazy(() => import("@/pages/receptionist/CurrentGuestsPage"));
 
 const AssignRoomPage = lazy(() => import("@/pages/receptionist/AssignRoomPage"));
 const CheckInPage = lazy(() => import("@/pages/receptionist/CheckInPage"));
@@ -70,8 +69,6 @@ export const AppRouter = () => (
             <Route path="/receptionist/dashboard" element={<ReceptionistDashboardPage />} />
             <Route path="/receptionist/today-arrivals" element={<TodayArrivalsPage />} />
             <Route path="/receptionist/today-departures" element={<TodayDeparturesPage />} />
-            <Route path="/receptionist/current-guests" element={<CurrentGuestsPage />} />
-
             <Route path="/receptionist/assign-room" element={<AssignRoomPage />} />
             <Route path="/receptionist/check-in" element={<CheckInPage />} />
             <Route path="/receptionist/check-out" element={<CheckOutPage />} />

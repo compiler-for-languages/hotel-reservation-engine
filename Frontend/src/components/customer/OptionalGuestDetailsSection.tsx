@@ -11,6 +11,13 @@ interface OptionalGuestDetailsSectionProps {
   onAddGuest: () => void;
   onRemoveGuest: (index: number) => void;
   onChangeGuest: (index: number, field: keyof OptionalGuestEntry, value: string) => void;
+  isCustomerGuest?: boolean;
+  customerDetails?: {
+    firstName: string;
+    lastName: string;
+    phone: string;
+  };
+  onCustomerGuestToggle?: (checked: boolean) => void;
 }
 
 const genderOptions: Gender[] = ["MALE", "FEMALE", "OTHER"];
@@ -23,14 +30,34 @@ export const OptionalGuestDetailsSection = ({
   onAddGuest,
   onRemoveGuest,
   onChangeGuest,
+  isCustomerGuest = false,
+  customerDetails,
+  onCustomerGuestToggle,
 }: OptionalGuestDetailsSectionProps) => (
-  <div className="md:col-span-4 space-y-3 rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4">
+  <div className="md:col-span-4 space-y-3 rounded-lg border border-slate-200 bg-white p-4">
     <div>
-      <h4 className="text-base font-semibold text-slate-900">Guest Details (Optional)</h4>
+      <h4 className="text-base font-semibold text-slate-900">Guest Details (Required)</h4>
       <p className="mt-1 text-sm text-slate-600">
-        You may skip this section and continue booking, or add guest information now. Reception can complete guest details later if needed.
+        All guest information is required. You must provide details for all {guestCount} guests.
       </p>
     </div>
+
+    {customerDetails && (
+      <div className="flex items-center gap-2">
+        <input
+          type="checkbox"
+          id="customer-as-guest"
+          checked={isCustomerGuest}
+          onChange={(e) => {
+            onCustomerGuestToggle?.(e.target.checked);
+          }}
+          className="h-4 w-4 rounded border-slate-300"
+        />
+        <label htmlFor="customer-as-guest" className="text-sm text-slate-700">
+          I am one of the guests staying in this reservation
+        </label>
+      </div>
+    )}
 
     {entries.length === 0 ? (
       <p className="text-sm text-slate-500">No guest entries added yet.</p>
@@ -122,6 +149,6 @@ export const OptionalGuestDetailsSection = ({
       </p>
     </div>
 
-    <FormErrorText message={formError} />
+    <FormErrorText message={formError ?? undefined} />
   </div>
 );

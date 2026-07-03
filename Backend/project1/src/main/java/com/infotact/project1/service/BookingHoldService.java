@@ -9,6 +9,7 @@ import com.infotact.project1.model.User;
 import com.infotact.project1.repository.BookingHoldRepository;
 import com.infotact.project1.repository.RoomTypeRepository;
 import com.infotact.project1.repository.UserRepository;
+import com.infotact.project1.exception.BusinessExceptions;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -40,19 +41,17 @@ public class BookingHoldService {
         User user = userRepository.findById(
                         requestDTO.getUserId())
                 .orElseThrow(() ->
-                        new RuntimeException("USER_NOT_FOUND"));
+                        BusinessExceptions.userNotFound(requestDTO.getUserId()));
 
-        // Validate room type
         RoomType roomType = roomTypeRepository.findById(
                         requestDTO.getRoomTypeId())
                 .orElseThrow(() ->
-                        new RuntimeException("ROOM_TYPE_NOT_FOUND"));
+                        BusinessExceptions.roomTypeNotFound(requestDTO.getRoomTypeId()));
 
-        // Ensure valid booking dates
         if (!requestDTO.getCheckInDate()
                 .isBefore(requestDTO.getCheckOutDate())) {
 
-            throw new RuntimeException("INVALID_DATE_RANGE");
+            throw BusinessExceptions.invalidCheckInDateRange();
         }
 
         // Create new booking hold
@@ -107,7 +106,7 @@ public class BookingHoldService {
         BookingHold bookingHold =
                 bookingHoldRepository.findById(holdId)
                         .orElseThrow(() ->
-                                new RuntimeException("BOOKING_HOLD_NOT_FOUND"));
+                                BusinessExceptions.bookingHoldNotFound(holdId));
 
         return mapToResponse(bookingHold);
     }
@@ -119,7 +118,7 @@ public class BookingHoldService {
         BookingHold bookingHold =
                 bookingHoldRepository.findById(holdId)
                         .orElseThrow(() ->
-                                new RuntimeException("BOOKING_HOLD_NOT_FOUND"));
+                                BusinessExceptions.bookingHoldNotFound(holdId));
 
         bookingHold.setStatus(
                 BookingHoldStatus.CANCELLED);
@@ -135,6 +134,21 @@ public class BookingHoldService {
         // Reservation id is also used as the Redis key
         bookingHoldRepository.deleteById(
                 reservationId.toString());
+    }
+
+    // Convert hold to reservation - mark as CONVERTED to prevent double counting
+    public void convertHoldToReservation(Long userId, Long reservationId) {
+        // Find the active hold for this user and update it
+        Iterable<BookingHold> allHolds = bookingHoldRepository.findAll();
+        for (BookingHold hold : allHolds) {
+            if (hold.getUserId().equals(userId) && hold.getStatus() == BookingHoldStatus.ACTIVE) {
+                hold.setHoldId(reservationId.toString()); // Update holdId to match reservationId for proper deletion
+                hold.setReservationId(reservationId);
+                hold.setStatus(BookingHoldStatus.CONVERTED);
+                bookingHoldRepository.save(hold);
+                break;
+            }
+        }
     }
 
     // Entity → DTO mapper

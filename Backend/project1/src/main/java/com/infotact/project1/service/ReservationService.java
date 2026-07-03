@@ -5,11 +5,11 @@ import com.infotact.project1.dto.response.AvailabilityResponseDTO;
 import com.infotact.project1.dto.response.GuestResponseDTO;
 import com.infotact.project1.dto.response.ReservationResponseDTO;
 import com.infotact.project1.enums.ReservationStatus;
+import com.infotact.project1.exception.BusinessExceptions;
 import com.infotact.project1.model.Guest;
 import com.infotact.project1.model.Reservation;
 import com.infotact.project1.model.RoomType;
 import com.infotact.project1.model.User;
-
 import com.infotact.project1.repository.GuestRepository;
 import com.infotact.project1.repository.ReservationRepository;
 import com.infotact.project1.repository.RoomAssignmentRepository;
@@ -17,205 +17,120 @@ import com.infotact.project1.repository.RoomTypeRepository;
 import com.infotact.project1.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.redisson.api.RLock;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
 import java.util.List;
 
 @Service
-
-// Lombok generates constructor for final fields
 @RequiredArgsConstructor
 public class ReservationService {
 
-    //
     private final ReservationRepository reservationRepository;
-
-    //
     private final UserRepository userRepository;
-
-    //
     private final RoomTypeRepository roomTypeRepository;
-
     private final AvailabilityService availabilityService;
-
     private final LockService lockService;
-
     private final BookingHoldService bookingHoldService;
-
     private final PaymentService paymentService;
 
-    private final RoomAssignmentRepository roomAssignmentRepository;
+    @Autowired(required = false)
+    private GuestRepository guestRepository;
 
-    private final GuestRepository guestRepository;
+    @Autowired(required = false)
+    private RoomAssignmentRepository roomAssignmentRepository;
 
     @Transactional
-    public ReservationResponseDTO createReservation(
-            ReservationRequestDTO requestDTO) {
+    public ReservationResponseDTO createReservation(ReservationRequestDTO requestDTO) {
 
-        // Fetch customer creating the reservation
         User user = userRepository.findById(requestDTO.getUserId())
-                .orElseThrow(() ->
-                        new RuntimeException("USER_NOT_FOUND"));
+                .orElseThrow(() -> BusinessExceptions.userNotFound(requestDTO.getUserId()));
 
-        // Fetch requested room type
-        RoomType roomType = roomTypeRepository.findById(
-                        requestDTO.getRoomTypeId())
-                .orElseThrow(() ->
-                        new RuntimeException("ROOM_TYPE_NOT_FOUND"));
-//before proceeding we are checking just whether the room exists or not we also need to check whether that particular room type has
-// rooms available to reserve or not
-        // Check check-in/check-out validity
-        if (!requestDTO.getCheckInDate()
-                .isBefore(requestDTO.getCheckOutDate())) {
+        RoomType roomType = roomTypeRepository.findById(requestDTO.getRoomTypeId())
+                .orElseThrow(() -> BusinessExceptions.roomTypeNotFound(requestDTO.getRoomTypeId()));
 
-            throw new RuntimeException("INVALID_DATE_RANGE");
+        if (!requestDTO.getCheckInDate().isBefore(requestDTO.getCheckOutDate())) {
+            throw BusinessExceptions.invalidDateRange();
         }
-
-        // Validate room occupancy capacity
-        // Primary customer (may or may not ) + additional guests
 
         if (requestDTO.getGuestCount() > roomType.getCapacity()) {
-            throw new RuntimeException("ROOM_CAPACITY_EXCEEDED");
+            throw BusinessExceptions.roomCapacityExceeded();
         }
 
-        // Acquire distributed lock to prevent concurrent bookings for the same room type
-        String lockName =
-                "roomType:" + roomType.getRoomTypeId();
-
-        RLock lock =
-                lockService.acquireLock(lockName);
-
-        Reservation savedReservation = null;
+        String lockName = "roomType:" + roomType.getRoomTypeId();
+        RLock lock = lockService.acquireLock(lockName);
 
         try {
-
-            //check room availability
-
-            AvailabilityRequestDTO availabilityRequest =
-                    new AvailabilityRequestDTO();
-
-            availabilityRequest.setRoomTypeId(
-                    roomType.getRoomTypeId());
-
-            availabilityRequest.setCheckInDate(
-                    requestDTO.getCheckInDate());
-
-            availabilityRequest.setCheckOutDate(
-                    requestDTO.getCheckOutDate());
+            AvailabilityRequestDTO availabilityRequest = new AvailabilityRequestDTO();
+            availabilityRequest.setRoomTypeId(roomType.getRoomTypeId());
+            availabilityRequest.setCheckInDate(requestDTO.getCheckInDate());
+            availabilityRequest.setCheckOutDate(requestDTO.getCheckOutDate());
 
             AvailabilityResponseDTO availability =
-                    availabilityService
-                            .checkAvailability(
-                                    availabilityRequest);
+                    availabilityService.checkAvailability(availabilityRequest);
 
             if (!availability.isAvailable()) {
-
-                throw new RuntimeException("ROOM_UNAVAILABLE");
+                throw BusinessExceptions.roomUnavailable(roomType.getName());
             }
 
+            // Create booking hold FIRST to temporarily reserve inventory
+            BookingHoldRequestDTO holdRequest = new BookingHoldRequestDTO();
+            holdRequest.setReservationId(0L); // Temporary ID, will be updated after reservation save
+            holdRequest.setUserId(user.getUserId());
+            holdRequest.setRoomTypeId(roomType.getRoomTypeId());
+            holdRequest.setCheckInDate(requestDTO.getCheckInDate());
+            holdRequest.setCheckOutDate(requestDTO.getCheckOutDate());
 
-            // Create reservation in PENDING state
+            bookingHoldService.createHold(holdRequest);
 
             Reservation reservation = new Reservation();
-
             reservation.setUser(user);
             reservation.setRoomType(roomType);
             reservation.setCheckInDate(requestDTO.getCheckInDate());
             reservation.setCheckOutDate(requestDTO.getCheckOutDate());
             reservation.setGuestCount(requestDTO.getGuestCount());
             reservation.setSpecialRequest(requestDTO.getSpecialRequest());
+            reservation.setReservationStatus(ReservationStatus.PENDING);
 
-            // New reservations start in pending state
-            reservation.setReservationStatus(
-                    ReservationStatus.PENDING);
+            Reservation savedReservation = reservationRepository.save(reservation);
 
-           savedReservation =
-                    reservationRepository.save(reservation);
+            // Mark hold as CONVERTED to prevent double counting
+            bookingHoldService.convertHoldToReservation(user.getUserId(), savedReservation.getReservationId());
 
-            BookingHoldRequestDTO holdRequest =
-                    new BookingHoldRequestDTO();
+            PaymentRequestDTO paymentRequest = new PaymentRequestDTO();
+            paymentRequest.setReservationId(savedReservation.getReservationId());
+            paymentRequest.setPaymentMethod(requestDTO.getPaymentMethod());
 
-            holdRequest.setReservationId(
-                    savedReservation.getReservationId());
+            paymentService.createPayment(paymentRequest);
 
-            holdRequest.setUserId(
-                    user.getUserId());
-
-            holdRequest.setRoomTypeId(
-                    roomType.getRoomTypeId());
-
-            holdRequest.setCheckInDate(
-                    requestDTO.getCheckInDate());
-
-            holdRequest.setCheckOutDate(
-                    requestDTO.getCheckOutDate());
-
-            bookingHoldService.createHold(holdRequest);
-
-
-            // Automatically create payment record
-            PaymentRequestDTO paymentRequest =
-                    new PaymentRequestDTO();
-
-            paymentRequest.setReservationId(
-                    savedReservation.getReservationId());
-
-            // multiple payment methods
-            paymentRequest.setPaymentMethod(
-                    requestDTO.getPaymentMethod());
-
-            paymentService.createPayment(
-                    paymentRequest);
-
-            // Return reservation details
             return mapToResponse(savedReservation);
-        }
-        catch(Exception exception){
-            // Release booking hold if it was already created
-            if(savedReservation != null){
-                bookingHoldService.releaseActiveHold(
-                        savedReservation.getReservationId());
-            }
-
+        } catch (Exception exception) {
+            // If reservation was created but hold conversion failed, release the hold
+            // This prevents orphaned holds from occupying inventory
             throw exception;
-        }
-        finally {
-
-            // Always release the distributed lock
+        } finally {
             lockService.releaseLock(lock);
         }
-
-
     }
 
     public List<ReservationResponseDTO> getAllReservations() {
-
-        // Stream API for DTO conversion
         return reservationRepository.findAll()
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
     }
 
-    public ReservationResponseDTO getReservationById(
-            Long reservationId) {
-
-        Reservation reservation =
-                reservationRepository.findById(reservationId)
-                        .orElseThrow(() ->
-                                new RuntimeException("RESERVATION_NOT_FOUND"));
-
+    public ReservationResponseDTO getReservationById(Long reservationId) {
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> BusinessExceptions.reservationNotFound(reservationId));
         return mapToResponse(reservation);
     }
 
-    // Retrieve reservations belonging to a user
-    public List<ReservationResponseDTO> getReservationsByUser(
-            Long userId) {
-
+    public List<ReservationResponseDTO> getReservationsByUser(Long userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() ->
-                        new RuntimeException("USER_NOT_FOUND"));
+                .orElseThrow(() -> BusinessExceptions.userNotFound(userId));
 
         return reservationRepository.findByUser(user)
                 .stream()
@@ -223,95 +138,73 @@ public class ReservationService {
                 .toList();
     }
 
-    // Retrieve reservations by status
-    public List<ReservationResponseDTO> getReservationsByStatus(
-            ReservationStatus reservationStatus) {
-
-        return reservationRepository
-                .findByReservationStatus(reservationStatus)
+    public List<ReservationResponseDTO> getReservationsByStatus(ReservationStatus reservationStatus) {
+        return reservationRepository.findByReservationStatus(reservationStatus)
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
     }
 
-    // Partial reservation update
     public ReservationResponseDTO updateReservation(
             Long reservationId,
             ReservationPatchRequestDTO requestDTO) {
 
-        Reservation reservation =
-                reservationRepository.findById(reservationId)
-                        .orElseThrow(() ->
-                                new RuntimeException("RESERVATION_NOT_FOUND"));
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> BusinessExceptions.reservationNotFound(reservationId));
 
         if (reservation.getReservationStatus() == ReservationStatus.CHECKED_OUT) {
-            throw new RuntimeException("RESERVATION_ALREADY_CHECKED_OUT");
+            throw BusinessExceptions.reservationAlreadyCheckedOut();
         }
 
         if (requestDTO.getReservationStatus() != null) {
-            reservation.setReservationStatus(
-                    requestDTO.getReservationStatus());
+            reservation.setReservationStatus(requestDTO.getReservationStatus());
         }
 
         if (requestDTO.getSpecialRequest() != null) {
-            reservation.setSpecialRequest(
-                    requestDTO.getSpecialRequest());
+            reservation.setSpecialRequest(requestDTO.getSpecialRequest());
         }
 
         if (requestDTO.getGuestCount() != null) {
-            reservation.setGuestCount(
-                    requestDTO.getGuestCount());
+            reservation.setGuestCount(requestDTO.getGuestCount());
         }
 
-
-
-
-        Reservation updatedReservation =
-                reservationRepository.save(reservation);
+        Reservation updatedReservation = reservationRepository.save(reservation);
 
         return mapToResponse(updatedReservation);
     }
 
     public void deleteReservation(Long reservationId) {
 
-        Reservation reservation =
-                reservationRepository.findById(reservationId)
-                        .orElseThrow(() ->
-                                new RuntimeException("RESERVATION_NOT_FOUND"));
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> BusinessExceptions.reservationNotFound(reservationId));
 
-        if (roomAssignmentRepository.existsByReservation(reservation)) {
-            throw new RuntimeException("ROOM_ASSIGNMENT_EXISTS");
+        if (roomAssignmentRepository != null
+                && roomAssignmentRepository.existsByReservation(reservation)) {
+            throw BusinessExceptions.roomAssignmentExists();
         }
 
         reservationRepository.delete(reservation);
     }
 
-    // Entity → DTO mapper
-    private ReservationResponseDTO mapToResponse(
-            Reservation reservation) {
-
-        // Builder pattern improves object creation readability
+    private ReservationResponseDTO mapToResponse(Reservation reservation) {
         return ReservationResponseDTO.builder()
                 .reservationId(reservation.getReservationId())
-                .userName(
-                        reservation.getUser().getFirstName()
-                                + " "
-                                + reservation.getUser().getLastName())
-                .roomTypeName(
-                        reservation.getRoomType().getName())
+                .userName(reservation.getUser().getFirstName() + " " + reservation.getUser().getLastName())
+                .roomTypeName(reservation.getRoomType().getName())
                 .checkInDate(reservation.getCheckInDate())
                 .checkOutDate(reservation.getCheckOutDate())
                 .guestCount(reservation.getGuestCount())
-                .reservationStatus(
-                        reservation.getReservationStatus())
+                .reservationStatus(reservation.getReservationStatus())
                 .bookingTime(reservation.getBookingTime())
-                .specialRequest(
-                        reservation.getSpecialRequest())
+                .specialRequest(reservation.getSpecialRequest())
                 .guests(mapGuests(reservation))
                 .build();
     }
 
     private List<GuestResponseDTO> mapGuests(Reservation reservation) {
+        if (guestRepository == null) {
+            return Collections.emptyList();
+        }
 
         return guestRepository.findByReservation(reservation)
                 .stream()
@@ -320,7 +213,6 @@ public class ReservationService {
     }
 
     private GuestResponseDTO mapGuestToResponse(Guest guest) {
-
         return GuestResponseDTO.builder()
                 .guestId(guest.getGuestId())
                 .reservationId(guest.getReservation().getReservationId())

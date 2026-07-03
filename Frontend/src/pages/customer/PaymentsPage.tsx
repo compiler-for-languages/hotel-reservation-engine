@@ -19,8 +19,8 @@ export default function PaymentsPage() {
   const [paymentIdForSuccess, setPaymentIdForSuccess] = useState<number | null>(null);
   const [pendingStartPaymentId, setPendingStartPaymentId] = useState<number | null>(null);
   const [pendingFailPaymentId, setPendingFailPaymentId] = useState<number | null>(null);
-  const [gatewayPaymentId, setGatewayPaymentId] = useState("");
-  const [gatewaySignature, setGatewaySignature] = useState("");
+  const [gatewayPaymentId, setGatewayPaymentId] = useState("pay_demo_123456789");
+  const [gatewaySignature, setGatewaySignature] = useState("signature_demo_987654321");
   const [selectedPayment, setSelectedPayment] = useState<PaymentResponseDTO | null>(null);
 
   const {
@@ -41,6 +41,7 @@ export default function PaymentsPage() {
         .filter((result): result is PromiseFulfilledResult<PaymentResponseDTO> => result.status === "fulfilled")
         .map((result) => result.value);
     },
+    refetchInterval: 30000, // Refetch every 30 seconds to catch status changes (PENDING -> EXPIRED)
   });
 
   const startMutation = useMutation({
@@ -60,6 +61,7 @@ export default function PaymentsPage() {
     },
     onError: (error) => toast.error(getApiErrorMessage(error, "Unable to fail payment.")),
   });
+
 
   const successMutation = useMutation({
     mutationFn: () => {
@@ -120,17 +122,21 @@ export default function PaymentsPage() {
             key: "actions",
             header: "Actions",
             render: (row) => (
-              <div className="flex gap-2">
-                <button type="button" className="rounded border border-slate-300 px-2 py-1 text-xs" onClick={() => setPendingStartPaymentId(row.paymentId)}>
-                  Start
-                </button>
-                <button
-                  type="button"
-                  className="rounded border border-emerald-200 px-2 py-1 text-xs text-emerald-700"
-                  onClick={() => setPaymentIdForSuccess(row.paymentId)}
-                >
-                  Success
-                </button>
+              <div className="flex flex-wrap gap-2">
+                {row.paymentStatus === "PENDING" ? (
+                  <button type="button" className="rounded border border-slate-300 px-2 py-1 text-xs" onClick={() => setPendingStartPaymentId(row.paymentId)}>
+                    Start
+                  </button>
+                ) : null}
+                {row.paymentStatus === "PROCESSING" ? (
+                  <button
+                    type="button"
+                    className="rounded border border-emerald-200 px-2 py-1 text-xs text-emerald-700"
+                    onClick={() => setPaymentIdForSuccess(row.paymentId)}
+                  >
+                    Success
+                  </button>
+                ) : null}
                 <button
                   type="button"
                   className="rounded border border-slate-300 px-2 py-1 text-xs"
@@ -140,9 +146,11 @@ export default function PaymentsPage() {
                 >
                   View
                 </button>
-                <button type="button" className="rounded border border-rose-200 px-2 py-1 text-xs text-rose-700" onClick={() => setPendingFailPaymentId(row.paymentId)}>
-                  Fail
-                </button>
+                {row.paymentStatus === "PROCESSING" ? (
+                  <button type="button" className="rounded border border-rose-200 px-2 py-1 text-xs text-rose-700" onClick={() => setPendingFailPaymentId(row.paymentId)}>
+                    Fail
+                  </button>
+                ) : null}
               </div>
             ),
           },
@@ -200,6 +208,7 @@ export default function PaymentsPage() {
             <p>Status: {selectedPayment.paymentStatus}</p>
             <p>Gateway Order ID: {selectedPayment.gatewayOrderId || "-"}</p>
             <p>Gateway Payment ID: {selectedPayment.gatewayPaymentId || "-"}</p>
+            <p>Gateway Signature: {selectedPayment.gatewaySignature || "-"}</p>
             <p>Paid At: {selectedPayment.paidAt ? formatDateTime(selectedPayment.paidAt) : "-"}</p>
           </div>
         ) : null}

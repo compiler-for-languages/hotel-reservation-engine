@@ -11,11 +11,11 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { Spinner } from "@/components/common/Spinner";
 import { AvailabilityService } from "@/services/AvailabilityService";
 import { GuestService } from "@/services/GuestService";
-// import { PaymentService } from "@/services/PaymentService";
 import { ReservationService } from "@/services/ReservationService";
 import { RoomTypeService } from "@/services/RoomTypeService";
 import { useAuthStore } from "@/store/authStore";
-import type { AvailabilityCustomerResponseDTO, AvailabilityResponseDTO, PaymentMethod } from "@/types/api";
+import { useNavigate } from "react-router-dom";
+import type { AvailabilityCustomerResponseDTO, PaymentMethod } from "@/types/api";
 import {
   createEmptyGuestEntry,
   getActiveGuestEntries,
@@ -32,6 +32,9 @@ const schema = z.object({
 }).refine((values) => new Date(values.checkOutDate) > new Date(values.checkInDate), {
   message: "Check-out date must be after check-in date.",
   path: ["checkOutDate"],
+}).refine((values) => new Date(values.checkInDate) >= new Date(new Date().setHours(0,0,0,0)), {
+  message: "Check-in date cannot be in the past.",
+  path: ["checkInDate"],
 });
 
 const bookingSchema = z.object({
@@ -56,8 +59,25 @@ const paymentMethodOptions: PaymentMethod[] = ["UPI", "CARD", "NET_BANKING", "WA
 
 export default function SearchRoomsPage() {
   const user = useAuthStore((state) => state.user);
+  const navigate = useNavigate();
   const [optionalGuests, setOptionalGuests] = useState<OptionalGuestEntry[]>([]);
   const [optionalGuestFormError, setOptionalGuestFormError] = useState<string | null>(null);
+  const [checkOutMinDate, setCheckOutMinDate] = useState<string>("");
+  const [isCustomerGuest, setIsCustomerGuest] = useState<boolean>(false);
+
+  // Get today's date in YYYY-MM-DD format
+  const getTodayDate = () => {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  };
+
+  // Get check-out min date (check-in + 1 day)
+  const getCheckOutMinDate = (checkIn: string) => {
+    if (!checkIn) return "";
+    const checkInDate = new Date(checkIn);
+    checkInDate.setDate(checkInDate.getDate() + 1);
+    return checkInDate.toISOString().split('T')[0];
+  };
 
   const {
     data: roomTypes = [],
@@ -104,11 +124,8 @@ export default function SearchRoomsPage() {
         checkOutDate: payload.checkOutDate,
       };
 
-      const [search, check] = await Promise.all([
-        AvailabilityService.searchAvailability(request),
-        AvailabilityService.checkAvailability(request),
-      ]);
-      return { search, check };
+      const search = await AvailabilityService.searchAvailability(request);
+      return search;
     },
     onError: (error) => {
       toast.error(getApiErrorMessage(error, "Failed to search availability."));
@@ -166,20 +183,31 @@ export default function SearchRoomsPage() {
 
       return { reservation, savedGuests };
     },
-    onSuccess: ({ reservation,savedGuests }) => {
+    onSuccess: ({ reservation, savedGuests }) => {
       const guestMessage =
         savedGuests.length > 0
           ? ` ${savedGuests.length} guest ${savedGuests.length === 1 ? "record was" : "records were"} saved.`
           : "";
-    toast.success(
-      `Reservation ${reservation.reservationId} created successfully. Payment has been initiated.${guestMessage}`
-    );
+      
+      let successMessage = `Reservation ${reservation.reservationId} created successfully.${guestMessage}`;
+      
+      if (reservation.reservationStatus === "PENDING") {
+        successMessage += " Complete payment to confirm your reservation.";
+      }
+      
+      toast.success(successMessage);
+      
       bookingForm.reset({ guestCount: "1", specialRequest: "", paymentMethod: "UPI" });
       setOptionalGuests([]);
       setOptionalGuestFormError(null);
+      
+      // Redirect to My Reservations page
+      setTimeout(() => {
+        navigate("/customer/reservations");
+      }, 1500);
     },
     onError: (error) => {
-      const message = error instanceof Error ? error.message : getApiErrorMessage(error, "Failed to create reservation.");
+      const message = getApiErrorMessage(error, "Unable to complete booking. Please try again.");
       setOptionalGuestFormError(message);
       toast.error(message);
     },
@@ -190,6 +218,15 @@ export default function SearchRoomsPage() {
   };
 
   const handleBookingSubmit = (values: BookingFormValues) => {
+    // Validate that number of guest forms equals guest count
+    if (optionalGuests.length !== Number(values.guestCount)) {
+      const errorMsg = `Please provide details for all ${values.guestCount} guests. Currently ${optionalGuests.length} guest form(s) filled.`;
+      setOptionalGuestFormError(errorMsg);
+      toast.error(errorMsg);
+      return;
+    }
+
+    // Validate that all guest forms are completely filled
     const guestValidationError = validateOptionalGuestEntries(optionalGuests, Number(values.guestCount));
     if (guestValidationError) {
       setOptionalGuestFormError(guestValidationError);
@@ -198,6 +235,11 @@ export default function SearchRoomsPage() {
     }
 
     setOptionalGuestFormError(null);
+    if (reservationMutation.isPending) {
+      return;
+    }
+    
+    // Disable button and prevent duplicate clicks
     reservationMutation.mutate(values);
   };
 
@@ -206,6 +248,24 @@ export default function SearchRoomsPage() {
       return;
     }
     setOptionalGuests((current) => [...current, createEmptyGuestEntry()]);
+  };
+
+  const handleCustomerGuestToggle = (checked: boolean) => {
+    setIsCustomerGuest(checked);
+    if (checked && user && optionalGuests.length < guestCountValue) {
+      // Auto-populate first guest with customer details
+      const customerGuest: OptionalGuestEntry = {
+        firstName: user.firstName,
+        lastName: user.lastName,
+        gender: "MALE", // Default, can be edited
+        dateOfBirth: "",
+        phone: user.phone,
+      };
+      setOptionalGuests((current) => [customerGuest, ...current]);
+    } else if (!checked && optionalGuests.length > 0) {
+      // Remove the first guest if it was the customer
+      setOptionalGuests((current) => current.slice(1));
+    }
   };
 
   const handleRemoveGuest = (index: number) => {
@@ -219,8 +279,7 @@ export default function SearchRoomsPage() {
     setOptionalGuestFormError(null);
   };
 
-  const customerResult: AvailabilityCustomerResponseDTO | undefined = availabilityMutation.data?.search;
-  const detailedResult: AvailabilityResponseDTO | undefined = availabilityMutation.data?.check;
+  const customerResult: AvailabilityCustomerResponseDTO | undefined = availabilityMutation.data;
 
   return (
     <div className="space-y-6">
@@ -251,13 +310,33 @@ export default function SearchRoomsPage() {
 
         <div>
           <label className="mb-1 block text-sm font-medium text-slate-700">Check In</label>
-          <input type="date" className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" {...register("checkInDate")} />
+          <input 
+            type="date" 
+            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" 
+            {...register("checkInDate", {
+              onChange: (e) => {
+                const value = e.target.value;
+                setCheckOutMinDate(getCheckOutMinDate(value));
+                // Reset check-out date if it's now invalid
+                const currentCheckOut = searchForm.getValues("checkOutDate");
+                if (currentCheckOut && new Date(currentCheckOut) <= new Date(value)) {
+                  searchForm.setValue("checkOutDate", "");
+                }
+              }
+            })}
+            min={getTodayDate()}
+          />
           <FormErrorText message={errors.checkInDate?.message} />
         </div>
 
         <div>
           <label className="mb-1 block text-sm font-medium text-slate-700">Check Out</label>
-          <input type="date" className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" {...register("checkOutDate")} />
+          <input 
+            type="date" 
+            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" 
+            {...register("checkOutDate")}
+            min={checkOutMinDate}
+          />
           <FormErrorText message={errors.checkOutDate?.message} />
         </div>
 
@@ -273,52 +352,28 @@ export default function SearchRoomsPage() {
         </div>
       </form>
 
-      {customerResult && detailedResult ? (
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-            <h3 className="text-base font-semibold text-slate-900">Customer Availability</h3>
-            <p className="mt-2 text-sm text-slate-700">{customerResult.availabilityMessage}</p>
-            <dl className="mt-3 space-y-1 text-sm text-slate-600">
-              <div className="flex justify-between">
-                <dt>Room Type</dt>
-                <dd>{customerResult.roomTypeName}</dd>
-              </div>
-              <div className="flex justify-between">
-                <dt>Capacity</dt>
-                <dd>{customerResult.capacity}</dd>
-              </div>
-              <div className="flex justify-between">
-                <dt>Price Per Night</dt>
-                <dd>{customerResult.pricePerNight}</dd>
-              </div>
-              <div className="flex justify-between">
-                <dt>Available Rooms</dt>
-                <dd>{customerResult.availableRooms}</dd>
-              </div>
-            </dl>
-          </div>
-
-          <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-            <h3 className="text-base font-semibold text-slate-900">Inventory Snapshot</h3>
-            <dl className="mt-3 space-y-1 text-sm text-slate-600">
-              <div className="flex justify-between">
-                <dt>Total Rooms</dt>
-                <dd>{detailedResult.totalRooms}</dd>
-              </div>
-              <div className="flex justify-between">
-                <dt>Booked Rooms</dt>
-                <dd>{detailedResult.bookedRooms}</dd>
-              </div>
-              <div className="flex justify-between">
-                <dt>Active Holds</dt>
-                <dd>{detailedResult.activeHolds}</dd>
-              </div>
-              <div className="flex justify-between">
-                <dt>Available Rooms</dt>
-                <dd>{detailedResult.availableRooms}</dd>
-              </div>
-            </dl>
-          </div>
+      {customerResult ? (
+        <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+          <h3 className="text-base font-semibold text-slate-900">Availability Result</h3>
+          <p className="mt-2 text-sm text-slate-700">{customerResult.availabilityMessage}</p>
+          <dl className="mt-3 space-y-1 text-sm text-slate-600">
+            <div className="flex justify-between">
+              <dt>Room Type</dt>
+              <dd>{customerResult.roomTypeName}</dd>
+            </div>
+            <div className="flex justify-between">
+              <dt>Capacity</dt>
+              <dd>{customerResult.capacity}</dd>
+            </div>
+            <div className="flex justify-between">
+              <dt>Price Per Night</dt>
+              <dd>{customerResult.pricePerNight}</dd>
+            </div>
+            <div className="flex justify-between">
+              <dt>Available Rooms</dt>
+              <dd>{customerResult.availableRooms}</dd>
+            </div>
+          </dl>
         </div>
       ) : null}
 
@@ -365,11 +420,27 @@ export default function SearchRoomsPage() {
             onAddGuest={handleAddGuest}
             onRemoveGuest={handleRemoveGuest}
             onChangeGuest={handleGuestChange}
+            isCustomerGuest={isCustomerGuest}
+            customerDetails={user ? {
+              firstName: user.firstName,
+              lastName: user.lastName,
+              phone: user.phone,
+            } : undefined}
+            onCustomerGuestToggle={handleCustomerGuestToggle}
           />
 
           <div className="md:col-span-4 flex justify-end">
-            <button type="submit" disabled={reservationMutation.isPending} className={primaryButtonClass}>
-              {reservationMutation.isPending ? "Creating..." : "Book Room"}
+            <button 
+              type="submit" 
+              disabled={reservationMutation.isPending} 
+              className={primaryButtonClass}
+              onClick={(e) => {
+                if (reservationMutation.isPending) {
+                  e.preventDefault();
+                }
+              }}
+            >
+              {reservationMutation.isPending ? "Booking..." : "Book Room"}
             </button>
           </div>
         </form>
@@ -378,10 +449,16 @@ export default function SearchRoomsPage() {
       {reservationMutation.data ? (
         <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
           Reservation {reservationMutation.data.reservation.reservationId} created successfully with status{" "}
-          {reservationMutation.data.reservation.reservationStatus}. Payment has been initiated.
+          {reservationMutation.data.reservation.reservationStatus}. A payment record was created automatically.
           {reservationMutation.data.savedGuests.length > 0
             ? ` ${reservationMutation.data.savedGuests.length} guest record(s) were saved with this booking.`
             : " You can add guest details later through reception if needed."}
+        </div>
+      ) : null}
+
+      {optionalGuestFormError ? (
+        <div className="rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">
+          {optionalGuestFormError}
         </div>
       ) : null}
     </div>

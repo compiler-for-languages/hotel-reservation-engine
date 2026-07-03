@@ -5,41 +5,34 @@ import com.infotact.project1.dto.request.UserRequestDTO;
 import com.infotact.project1.dto.response.UserResponseDTO;
 import com.infotact.project1.enums.AccountStatus;
 import com.infotact.project1.enums.Role;
+import com.infotact.project1.exception.BusinessExceptions;
 import com.infotact.project1.model.User;
 import com.infotact.project1.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Service;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
-
-// Lombok generates constructor for final fields
 @RequiredArgsConstructor
 public class UserService {
 
-    // Dependency remains immutable after injection
     private final UserRepository userRepository;
-
     private final PasswordEncoder passwordEncoder;
 
-
-// Admin creates receptionist and receptionist creates walk-in user
     public UserResponseDTO createUser(UserRequestDTO requestDTO) {
 
-        // Prevent duplicate email addresses
         userRepository.findByEmail(requestDTO.getEmail())
                 .ifPresent(user -> {
-                    throw new RuntimeException("EMAIL_ALREADY_EXISTS");
+                    throw BusinessExceptions.emailAlreadyExists(requestDTO.getEmail());
                 });
 
-        // Prevent duplicate phone numbers
         userRepository.findByPhone(requestDTO.getPhone())
                 .ifPresent(user -> {
-                    throw new RuntimeException("PHONE_ALREADY_EXISTS");
+                    throw BusinessExceptions.phoneAlreadyExists(requestDTO.getPhone());
                 });
 
         User user = new User();
@@ -49,15 +42,9 @@ public class UserService {
         user.setEmail(requestDTO.getEmail());
         user.setPhone(requestDTO.getPhone());
         user.setGender(requestDTO.getGender());
-
-        // BCrypt hashes password before storing
-        user.setPasswordHash(
-                passwordEncoder.encode(requestDTO.getPassword()));
-
+        user.setPasswordHash(passwordEncoder.encode(requestDTO.getPassword()));
         user.setRole(requestDTO.getRole());
-
-        user.setAccountStatus(
-                com.infotact.project1.enums.AccountStatus.ACTIVE);
+        user.setAccountStatus(AccountStatus.ACTIVE);
 
         User savedUser = userRepository.save(user);
 
@@ -65,8 +52,6 @@ public class UserService {
     }
 
     public List<UserResponseDTO> getAllUsers() {
-
-        // Stream API for DTO conversion
         return userRepository.findAll()
                 .stream()
                 .map(this::mapToResponse)
@@ -74,32 +59,21 @@ public class UserService {
     }
 
     public UserResponseDTO getUserById(Long userId) {
-
         User user = userRepository.findById(userId)
-                .orElseThrow(() ->
-                        new RuntimeException("USER_NOT_FOUND"));
-
+                .orElseThrow(() -> BusinessExceptions.userNotFound(userId));
         return mapToResponse(user);
     }
 
-    // Custom repository method
     public UserResponseDTO getUserByEmail(String email) {
-
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() ->
-                        new RuntimeException("USER_NOT_FOUND"));
-
+                .orElseThrow(() -> BusinessExceptions.userNotFoundByEmail(email));
         return mapToResponse(user);
     }
 
-    // Partial user update
-    public UserResponseDTO updateUser(
-            Long userId,
-            UserPatchRequestDTO requestDTO) {
+    public UserResponseDTO updateUser(Long userId, UserPatchRequestDTO requestDTO) {
 
         User user = userRepository.findById(userId)
-                .orElseThrow(() ->
-                        new RuntimeException("USER_NOT_FOUND"));
+                .orElseThrow(() -> BusinessExceptions.userNotFound(userId));
 
         authorizeUserUpdate(userId, requestDTO, user);
 
@@ -112,17 +86,12 @@ public class UserService {
         }
 
         if (requestDTO.getPhone() != null) {
-
             userRepository.findByPhone(requestDTO.getPhone())
                     .ifPresent(existingUser -> {
-
-                        if (!existingUser.getUserId()
-                                .equals(user.getUserId())) {
-
-                            throw new RuntimeException("PHONE_ALREADY_EXISTS");
+                        if (!existingUser.getUserId().equals(user.getUserId())) {
+                            throw BusinessExceptions.phoneAlreadyExists(requestDTO.getPhone());
                         }
                     });
-
             user.setPhone(requestDTO.getPhone());
         }
 
@@ -138,10 +107,8 @@ public class UserService {
     public void deleteUser(Long userId) {
 
         User user = userRepository.findById(userId)
-                .orElseThrow(() ->
-                        new RuntimeException("USER_NOT_FOUND"));
+                .orElseThrow(() -> BusinessExceptions.userNotFound(userId));
 
-        // Prevent admin from deleting their own account
         Authentication authentication =
                 SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.isAuthenticated()) {
@@ -150,7 +117,7 @@ public class UserService {
             if (currentUser != null
                     && currentUser.getRole() == Role.ADMIN
                     && currentUser.getUserId().equals(userId)) {
-                throw new RuntimeException("SELF_DELETE_NOT_ALLOWED");
+                throw new RuntimeException("Administrators cannot delete their own account.");
             }
         }
 
@@ -158,7 +125,6 @@ public class UserService {
     }
 
     public List<UserResponseDTO> getAllCustomers() {
-
         return userRepository.findByRole(Role.CUSTOMER)
                 .stream()
                 .map(this::mapToResponse)
@@ -166,18 +132,13 @@ public class UserService {
     }
 
     public List<UserResponseDTO> getAllReceptionists() {
-
         return userRepository.findByRole(Role.RECEPTIONIST)
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
     }
 
-
-    // Entity → DTO mapper
     private UserResponseDTO mapToResponse(User user) {
-
-        // Builder pattern improves object creation readability
         return UserResponseDTO.builder()
                 .userId(user.getUserId())
                 .firstName(user.getFirstName())
@@ -198,12 +159,11 @@ public class UserService {
                 SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication == null || !authentication.isAuthenticated()) {
-            throw new RuntimeException("AUTHENTICATION_REQUIRED");
+            return;
         }
 
         User currentUser = userRepository.findByEmail(authentication.getName())
-                .orElseThrow(() ->
-                        new RuntimeException("USER_NOT_FOUND"));
+                .orElseThrow(BusinessExceptions::userNotFound);
 
         boolean isAdmin = currentUser.getRole() == Role.ADMIN;
 
@@ -211,18 +171,18 @@ public class UserService {
             if (currentUser.getUserId().equals(targetUserId)
                     && requestDTO.getAccountStatus() != null
                     && requestDTO.getAccountStatus() != AccountStatus.ACTIVE) {
-                throw new RuntimeException("SELF_DEACTIVATE_NOT_ALLOWED");
+                throw new RuntimeException("Administrators cannot deactivate their own account.");
             }
             return;
         }
 
         if (!currentUser.getUserId().equals(targetUserId)) {
-            throw new RuntimeException("ACCESS_DENIED");
+            throw BusinessExceptions.accessDenied();
         }
 
         if (requestDTO.getAccountStatus() != null
                 && requestDTO.getAccountStatus() != targetUser.getAccountStatus()) {
-            throw new RuntimeException("ACCESS_DENIED");
+            throw BusinessExceptions.accessDenied();
         }
     }
 }

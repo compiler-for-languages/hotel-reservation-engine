@@ -1,6 +1,7 @@
 package com.infotact.project1.controller;
 
 import com.infotact.project1.dto.request.LoginRequestDTO;
+import com.infotact.project1.dto.request.ProfilePatchRequestDTO;
 import com.infotact.project1.dto.request.RegisterRequestDTO;
 import com.infotact.project1.dto.response.LoginResponseDTO;
 import com.infotact.project1.dto.response.UserResponseDTO;
@@ -36,5 +37,12 @@ public class AuthController {
     public UserResponseDTO getCurrentUser() {
 
         return authService.getCurrentUser();
+    }
+
+    @PatchMapping("/profile")
+    public UserResponseDTO updateProfile(
+            @RequestBody ProfilePatchRequestDTO requestDTO) {
+
+        return authService.updateProfile(requestDTO);
     }
 }

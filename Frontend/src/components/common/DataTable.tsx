@@ -100,9 +100,9 @@ export const DataTable = <T,>({
   };
 
   return (
-    <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h3 className="text-base font-semibold text-slate-900">{title}</h3>
+    <div className="card-elegant p-5 space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <h3 className="text-lg font-semibold text-slate-900">{title}</h3>
         <input
           aria-label={`${tableTitle} search`}
           value={search}
@@ -110,7 +110,7 @@ export const DataTable = <T,>({
             setSearch(event.target.value);
             setPage(1);
           }}
-          className="w-full max-w-xs rounded-md border border-slate-300 px-3 py-2 text-sm"
+          className="input-elegant max-w-xs"
           placeholder={searchPlaceholder}
         />
       </div>
@@ -123,10 +123,10 @@ export const DataTable = <T,>({
         <>
           <div className="space-y-3 md:hidden" aria-label={`${tableTitle} mobile list`}>
             {pagedData.map((row) => (
-              <div key={rowKey(row)} className="rounded-md border border-slate-200 p-3">
+              <div key={rowKey(row)} className="rounded-lg border border-slate-200 bg-slate-50 p-4">
                 {columns.map((column) => (
-                  <div key={column.key} className="flex items-start justify-between gap-3 py-1 text-sm">
-                    <span className="text-slate-500">{column.header}</span>
+                  <div key={column.key} className="flex items-start justify-between gap-3 py-2 text-sm">
+                    <span className="text-slate-500 font-medium">{column.header}</span>
                     <span className="text-right text-slate-700">{column.render(row)}</span>
                   </div>
                 ))}
@@ -134,21 +134,25 @@ export const DataTable = <T,>({
             ))}
           </div>
 
-          <div className="hidden overflow-x-auto md:block">
+          <div className="hidden overflow-x-auto md:block rounded-lg border border-slate-200">
             <table className="min-w-full divide-y divide-slate-200 text-sm" aria-label={tableTitle}>
-              <thead>
+              <thead className="bg-slate-50">
                 <tr>
                   {columns.map((column) => (
-                    <th key={column.key} className={cn("px-3 py-2 text-left font-semibold text-slate-600", column.className)}>
+                    <th key={column.key} className={cn("px-4 py-3 text-left font-semibold text-slate-700", column.className)}>
                       {column.sortValue ? (
                         <button
-                          className="inline-flex items-center gap-1"
+                          className="inline-flex items-center gap-2 hover:text-indigo-600 transition-colors"
                           type="button"
                           aria-label={`Sort by ${column.header}`}
                           onClick={() => onSort(column.key)}
                         >
                           {column.header}
-                          {sortKey === column.key ? (sortDirection === "asc" ? "▲" : "▼") : ""}
+                          {sortKey === column.key ? (
+                            <span className="text-indigo-600">{sortDirection === "asc" ? "↑" : "↓"}</span>
+                          ) : (
+                            <span className="text-slate-400">↕</span>
+                          )}
                         </button>
                       ) : (
                         column.header
@@ -157,11 +161,11 @@ export const DataTable = <T,>({
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 bg-white">
                 {pagedData.map((row) => (
-                  <tr key={rowKey(row)}>
+                  <tr key={rowKey(row)} className="hover:bg-slate-50 transition-colors">
                     {columns.map((column) => (
-                      <td key={column.key} className={cn("whitespace-nowrap px-3 py-2 text-slate-700", column.className)}>
+                      <td key={column.key} className={cn("whitespace-nowrap px-4 py-3 text-slate-700", column.className)}>
                         {column.render(row)}
                       </td>
                     ))}
@@ -175,28 +179,28 @@ export const DataTable = <T,>({
         </>
       ) : null}
 
-      <div className="flex items-center justify-between text-xs text-slate-500">
-        <span>
-          Page {currentPage} of {pageCount}
+      <div className="flex items-center justify-between pt-2 text-sm text-slate-500">
+        <span className="font-medium">
+          Page {currentPage} of {pageCount} ({sorted.length} records)
         </span>
-        <div className="space-x-2">
+        <div className="flex gap-2">
           <button
             type="button"
             aria-label="Previous page"
             onClick={() => setPage((prev) => Math.max(1, prev - 1))}
             disabled={currentPage === 1}
-            className="rounded border border-slate-300 px-2 py-1 disabled:opacity-50"
+            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 font-medium transition-all hover:bg-slate-50 disabled:opacity-50 disabled:hover:bg-white"
           >
-            Prev
+            ← Previous
           </button>
           <button
             type="button"
             aria-label="Next page"
             onClick={() => setPage((prev) => Math.min(pageCount, prev + 1))}
             disabled={currentPage >= pageCount}
-            className="rounded border border-slate-300 px-2 py-1 disabled:opacity-50"
+            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 font-medium transition-all hover:bg-slate-50 disabled:opacity-50 disabled:hover:bg-white"
           >
-            Next
+            Next →
           </button>
         </div>
       </div>

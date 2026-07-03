@@ -5,6 +5,7 @@ import toast from "react-hot-toast";
 import { Link, useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { Spinner } from "@/components/common/Spinner";
+import { PasswordInput } from "@/components/common/PasswordInput";
 import { useLogin } from "@/hooks/useAuthActions";
 import { dashboardByRole } from "@/utils/role";
 
@@ -68,10 +69,8 @@ export default function LoginPage() {
           <label htmlFor="password" className="mb-1 block text-sm font-medium text-slate-700">
             Password
           </label>
-          <input
+          <PasswordInput
             id="password"
-            type="password"
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-slate-500"
             placeholder="Enter your password"
             {...register("password")}
           />

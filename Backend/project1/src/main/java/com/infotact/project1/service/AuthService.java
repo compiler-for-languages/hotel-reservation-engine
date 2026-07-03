@@ -1,11 +1,13 @@
 package com.infotact.project1.service;
 
 import com.infotact.project1.dto.request.LoginRequestDTO;
+import com.infotact.project1.dto.request.ProfilePatchRequestDTO;
 import com.infotact.project1.dto.request.RegisterRequestDTO;
 import com.infotact.project1.dto.response.LoginResponseDTO;
 import com.infotact.project1.dto.response.UserResponseDTO;
 import com.infotact.project1.enums.AccountStatus;
 import com.infotact.project1.enums.Role;
+import com.infotact.project1.exception.BusinessExceptions;
 import com.infotact.project1.model.User;
 import com.infotact.project1.repository.UserRepository;
 import com.infotact.project1.security.JwtService;
@@ -16,8 +18,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
-
-// Lombok generates constructor for final fields
 @RequiredArgsConstructor
 public class AuthService {
 
@@ -27,16 +27,14 @@ public class AuthService {
 
     public UserResponseDTO registerCustomer(RegisterRequestDTO requestDTO) {
 
-        // Prevent duplicate email addresses
         userRepository.findByEmail(requestDTO.getEmail())
                 .ifPresent(user -> {
-                    throw new RuntimeException("EMAIL_ALREADY_EXISTS");
+                    throw BusinessExceptions.emailAlreadyExists(requestDTO.getEmail());
                 });
 
-        // Prevent duplicate phone numbers
         userRepository.findByPhone(requestDTO.getPhone())
                 .ifPresent(user -> {
-                    throw new RuntimeException("PHONE_ALREADY_EXISTS");
+                    throw BusinessExceptions.phoneAlreadyExists(requestDTO.getPhone());
                 });
 
         User user = new User();
@@ -46,15 +44,8 @@ public class AuthService {
         user.setGender(requestDTO.getGender());
         user.setEmail(requestDTO.getEmail());
         user.setPhone(requestDTO.getPhone());
-
-        // BCrypt hashes password before storing
-        user.setPasswordHash(
-                passwordEncoder.encode(requestDTO.getPassword()));
-
-        // Self registration creates normal users only
+        user.setPasswordHash(passwordEncoder.encode(requestDTO.getPassword()));
         user.setRole(Role.CUSTOMER);
-
-        // Newly registered account is active
         user.setAccountStatus(AccountStatus.ACTIVE);
 
         User savedUser = userRepository.save(user);
@@ -62,55 +53,69 @@ public class AuthService {
         return mapToResponse(savedUser);
     }
 
+    public LoginResponseDTO login(LoginRequestDTO requestDTO) {
 
-    public LoginResponseDTO login(
-            LoginRequestDTO requestDTO) {
+        User user = userRepository.findByEmail(requestDTO.getEmail())
+                .orElseThrow(BusinessExceptions::invalidCredentials);
 
-        User user = userRepository.findByEmail(
-                        requestDTO.getEmail())
-
-                .orElseThrow(() ->
-                        new RuntimeException("INVALID_CREDENTIALS"));
-
-        if (user.getAccountStatus()
-                != AccountStatus.ACTIVE) {
-
-            throw new RuntimeException("ACCOUNT_INACTIVE");
+        if (user.getAccountStatus() != AccountStatus.ACTIVE) {
+            throw BusinessExceptions.accountInactive();
         }
 
-        if (!passwordEncoder.matches(
-                requestDTO.getPassword(),   // Once again , while checking , password is encrypted by Bcrypt, there is no concept of decrypting
-                user.getPasswordHash())) {
-
-            throw new RuntimeException("INVALID_CREDENTIALS");
+        if (!passwordEncoder.matches(requestDTO.getPassword(), user.getPasswordHash())) {
+            throw BusinessExceptions.invalidCredentials();
         }
 
-        String token =
-                jwtService.generateToken(
-
-                        user);
+        String token = jwtService.generateToken(user);
 
         return new LoginResponseDTO(token);
     }
 
     public UserResponseDTO getCurrentUser() {
 
+        return mapToResponse(getAuthenticatedUser());
+    }
+
+    public UserResponseDTO updateProfile(ProfilePatchRequestDTO requestDTO) {
+
+        User user = getAuthenticatedUser();
+
+        if (requestDTO.getFirstName() != null) {
+            user.setFirstName(requestDTO.getFirstName());
+        }
+
+        if (requestDTO.getLastName() != null) {
+            user.setLastName(requestDTO.getLastName());
+        }
+
+        if (requestDTO.getPhone() != null) {
+            userRepository.findByPhone(requestDTO.getPhone())
+                    .ifPresent(existingUser -> {
+                        if (!existingUser.getUserId().equals(user.getUserId())) {
+                            throw BusinessExceptions.phoneAlreadyExists(requestDTO.getPhone());
+                        }
+                    });
+            user.setPhone(requestDTO.getPhone());
+        }
+
+        User updatedUser = userRepository.save(user);
+
+        return mapToResponse(updatedUser);
+    }
+
+    private User getAuthenticatedUser() {
+
         Authentication authentication =
                 SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication == null || !authentication.isAuthenticated()) {
-            throw new RuntimeException("AUTHENTICATION_REQUIRED");
+            throw BusinessExceptions.authenticationRequired();
         }
 
-        User user = userRepository.findByEmail(authentication.getName())
-                .orElseThrow(() ->
-                        new RuntimeException("USER_NOT_FOUND"));
-
-        return mapToResponse(user);
+        return userRepository.findByEmail(authentication.getName())
+                .orElseThrow(BusinessExceptions::userNotFound);
     }
 
-
-    // Entity → DTO mapper
     private UserResponseDTO mapToResponse(User user) {
 
         return UserResponseDTO.builder()

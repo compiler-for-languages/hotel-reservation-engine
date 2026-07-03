@@ -8,6 +8,7 @@ import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { DataTable } from "@/components/common/DataTable";
 import { FormErrorText } from "@/components/common/FormErrorText";
 import { Modal } from "@/components/common/Modal";
+import { PasswordInput } from "@/components/common/PasswordInput";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { UserService } from "@/services/UserService";
 import type { UserResponseDTO } from "@/types/api";
@@ -138,15 +139,15 @@ export default function ReceptionistsPage() {
 
       <form onSubmit={createForm.handleSubmit((values) => createMutation.mutate(values))} className="grid gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-3">
         <div>
-          <input className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" placeholder="First Name" {...createForm.register("firstName")} />
+          <input className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" placeholder="Receptionist first name (e.g. Priya)" {...createForm.register("firstName")} />
           <FormErrorText message={createForm.formState.errors.firstName?.message} />
         </div>
         <div>
-          <input className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" placeholder="Last Name" {...createForm.register("lastName")} />
+          <input className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" placeholder="Receptionist last name (e.g. Nair)" {...createForm.register("lastName")} />
           <FormErrorText message={createForm.formState.errors.lastName?.message} />
         </div>
         <div>
-          <select className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" {...createForm.register("gender")}>
+          <select className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" title="Select gender" {...createForm.register("gender")}>
             <option value="MALE">MALE</option>
             <option value="FEMALE">FEMALE</option>
             <option value="OTHER">OTHER</option>
@@ -154,15 +155,15 @@ export default function ReceptionistsPage() {
           <FormErrorText message={createForm.formState.errors.gender?.message} />
         </div>
         <div>
-          <input className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" placeholder="Email" {...createForm.register("email")} />
+          <input className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" placeholder="Work email address (e.g. priya@hotel.com)" {...createForm.register("email")} />
           <FormErrorText message={createForm.formState.errors.email?.message} />
         </div>
         <div>
-          <input className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" placeholder="Phone" {...createForm.register("phone")} />
+          <input className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" placeholder="10-digit mobile number (e.g. 9876543210)" {...createForm.register("phone")} />
           <FormErrorText message={createForm.formState.errors.phone?.message} />
         </div>
         <div>
-          <input type="password" className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" placeholder="Password" {...createForm.register("password")} />
+          <PasswordInput placeholder="Login password (minimum 6 characters)" {...createForm.register("password")} />
           <FormErrorText message={createForm.formState.errors.password?.message} />
         </div>
         <div className="md:col-span-3">
@@ -211,19 +212,19 @@ export default function ReceptionistsPage() {
       <Modal open={Boolean(editingReceptionist)} title="Edit Receptionist" onClose={() => setEditingReceptionist(null)}>
         <form className="grid gap-3 md:grid-cols-2" onSubmit={editForm.handleSubmit((values) => updateMutation.mutate(values))}>
           <div>
-            <input className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" placeholder="First Name" {...editForm.register("firstName")} />
+            <input className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" placeholder="Updated first name" {...editForm.register("firstName")} />
             <FormErrorText message={editForm.formState.errors.firstName?.message} />
           </div>
           <div>
-            <input className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" placeholder="Last Name" {...editForm.register("lastName")} />
+            <input className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" placeholder="Updated last name" {...editForm.register("lastName")} />
             <FormErrorText message={editForm.formState.errors.lastName?.message} />
           </div>
           <div className="md:col-span-2">
-            <input className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" placeholder="Phone" {...editForm.register("phone")} />
+            <input className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" placeholder="Updated 10-digit mobile number" {...editForm.register("phone")} />
             <FormErrorText message={editForm.formState.errors.phone?.message} />
           </div>
           <div className="md:col-span-2">
-            <select className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" {...editForm.register("accountStatus")}>
+            <select className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" title="Account status (ACTIVE allows login)" {...editForm.register("accountStatus")}>
               <option value="ACTIVE">ACTIVE</option>
               <option value="INACTIVE">INACTIVE</option>
             </select>

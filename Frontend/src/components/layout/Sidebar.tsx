@@ -14,20 +14,20 @@ export const Sidebar = () => {
   return (
     <aside
       className={cn(
-        "fixed top-16 left-0 z-20 h-[calc(100vh-4rem)] border-r border-slate-200 bg-white transition-all duration-200",
+        "fixed top-16 left-0 z-20 h-[calc(100vh-4rem)] border-r border-slate-200/50 bg-white/80 backdrop-blur-sm transition-all duration-300",
         sidebarCollapsed ? "w-20" : "w-64"
       )}
     >
       <div className="flex h-full flex-col">
-        <div className="border-b border-slate-200 p-3">
+        <div className="border-b border-slate-200/50 p-3">
           <button
             type="button"
             onClick={toggleSidebar}
             aria-expanded={!sidebarCollapsed}
             aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-left text-sm font-medium text-slate-700 hover:bg-slate-100"
+            className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-left text-sm font-medium text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm"
           >
-            {sidebarCollapsed ? "Expand" : "Collapse"}
+            {sidebarCollapsed ? "→" : "← Collapse"}
           </button>
         </div>
 
@@ -38,14 +38,16 @@ export const Sidebar = () => {
               to={item.path}
               className={({ isActive }) =>
                 cn(
-                  "flex items-center rounded-md px-3 py-2 text-sm font-medium transition",
-                  isActive ? "bg-slate-900 text-white" : "text-slate-700 hover:bg-slate-100",
+                  "flex items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
+                  isActive
+                    ? "bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-md"
+                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
                   sidebarCollapsed && "justify-center"
                 )
               }
               title={item.label}
             >
-              {sidebarCollapsed ? item.label.slice(0, 1) : item.label}
+              {sidebarCollapsed ? item.label.slice(0, 2) : item.label}
             </NavLink>
           ))}
         </nav>

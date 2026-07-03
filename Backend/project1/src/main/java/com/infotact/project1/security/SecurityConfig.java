@@ -86,6 +86,16 @@ public class SecurityConfig {
                                 "CUSTOMER"
                         )
 
+                        .requestMatchers(
+                                HttpMethod.PATCH,
+                                "/api/auth/profile"
+                        )
+                        .hasAnyRole(
+                                "ADMIN",
+                                "RECEPTIONIST",
+                                "CUSTOMER"
+                        )
+
                         // ---------------- PROFILE ----------------
 
                         .requestMatchers(

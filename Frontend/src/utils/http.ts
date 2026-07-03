@@ -1,7 +1,7 @@
 import { AxiosError } from "axios";
 
 const TECHNICAL_ERROR_PATTERN =
-  /could not execute statement|sqlstate|sql exception|sqlexception|org\.hibernate|hibernateexception|jdbc|postgresql|mysql|constraint violation|foreign key constraint|violates foreign key|violates unique constraint|duplicate key|data integrity|referential integrity|org\.springframework\.dao|detached entity|persistence exception|constraint "/i;
+  /could not execute statement|sqlstate|sql exception|sqlexception|org\.hibernate|hibernateexception|jdbc|postgresql|mysql|constraint violation|foreign key constraint|violates foreign key|violates unique constraint|duplicate key|data integrity|referential integrity|org\.springframework\.dao|detached entity|persistence exception|constraint |jwt expired|token expired|expired.*milliseconds/i;
 
 const isTechnicalErrorMessage = (message: string) => TECHNICAL_ERROR_PATTERN.test(message);
 

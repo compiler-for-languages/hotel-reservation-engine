@@ -136,12 +136,14 @@ class ReservationServiceTest {
                 .thenReturn(reservation);
 
         doNothing()
-                .when(bookingHoldService)
-                .createHold(any());
+                .when(lockService)
+                .releaseLock(any());
 
-        doNothing()
-                .when(paymentService)
-                .createPayment(any());
+        when(bookingHoldService.createHold(any()))
+                .thenReturn(null);
+
+        when(paymentService.createPayment(any()))
+                .thenReturn(null);
 
         ReservationResponseDTO response =
                 reservationService.createReservation(request);
@@ -462,9 +464,8 @@ class ReservationServiceTest {
         when(reservationRepository.save(any()))
                 .thenReturn(reservation);
 
-        doNothing()
-                .when(bookingHoldService)
-                .createHold(any());
+        when(bookingHoldService.createHold(any()))
+                .thenReturn(null);
 
         doThrow(new RuntimeException("Payment Failed"))
                 .when(paymentService)

@@ -159,7 +159,7 @@ export default function RoomsPage() {
         <div className="space-y-2">
           <h3 className="text-sm font-semibold text-slate-900">Get Room By ID</h3>
           <div className="flex gap-2">
-            <input value={lookupRoomId} onChange={(event) => setLookupRoomId(event.target.value)} type="number" placeholder="Room ID" className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" />
+            <input value={lookupRoomId} onChange={(event) => setLookupRoomId(event.target.value)} type="number" placeholder="Enter room ID (e.g. 12)" className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" />
             <button
               type="button"
               onClick={() => {
@@ -180,7 +180,7 @@ export default function RoomsPage() {
         <div className="space-y-2">
           <h3 className="text-sm font-semibold text-slate-900">Get Room By Number</h3>
           <div className="flex gap-2">
-            <input value={lookupRoomNumber} onChange={(event) => setLookupRoomNumber(event.target.value)} placeholder="Room number" className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" />
+            <input value={lookupRoomNumber} onChange={(event) => setLookupRoomNumber(event.target.value)} placeholder="Enter room number (e.g. 101)" className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" />
             <button
               type="button"
               onClick={() => {
@@ -200,7 +200,7 @@ export default function RoomsPage() {
       </div>
 
       <div className="grid gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-4">
-        <select className="rounded-md border border-slate-300 px-3 py-2 text-sm" value={filterRoomTypeId} onChange={(event) => setFilterRoomTypeId(event.target.value)}>
+        <select className="rounded-md border border-slate-300 px-3 py-2 text-sm" title="Choose room type to filter" value={filterRoomTypeId} onChange={(event) => setFilterRoomTypeId(event.target.value)}>
           <option value="">Select room type</option>
           {roomTypes.map((roomType) => (
             <option key={roomType.roomTypeId} value={roomType.roomTypeId}>
@@ -221,7 +221,7 @@ export default function RoomsPage() {
         >
           Get By Room Type
         </button>
-        <select className="rounded-md border border-slate-300 px-3 py-2 text-sm" value={filterRoomStatus} onChange={(event) => setFilterRoomStatus(event.target.value as RoomStatus)}>
+        <select className="rounded-md border border-slate-300 px-3 py-2 text-sm" title="Filter by room status" value={filterRoomStatus} onChange={(event) => setFilterRoomStatus(event.target.value as RoomStatus)}>
           <option value="AVAILABLE">AVAILABLE</option>
           <option value="OCCUPIED">OCCUPIED</option>
           <option value="MAINTENANCE">MAINTENANCE</option>
@@ -274,11 +274,11 @@ export default function RoomsPage() {
 
       <form onSubmit={createForm.handleSubmit((values) => createMutation.mutate(values))} className="grid gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-4">
         <div>
-          <input className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" placeholder="Room Number" {...createForm.register("roomNumber")} />
+          <input className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" placeholder="Physical room number (e.g. 101)" {...createForm.register("roomNumber")} />
           <FormErrorText message={createForm.formState.errors.roomNumber?.message} />
         </div>
         <div>
-          <select className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" {...createForm.register("roomTypeId")}>
+          <select className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" title="Select category this room belongs to" {...createForm.register("roomTypeId")}>
             <option value="">Select room type</option>
             {roomTypes.map((roomType) => (
               <option key={roomType.roomTypeId} value={roomType.roomTypeId}>
@@ -289,7 +289,7 @@ export default function RoomsPage() {
           <FormErrorText message={createForm.formState.errors.roomTypeId?.message} />
         </div>
         <div>
-          <input type="number" className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" placeholder="Floor" {...createForm.register("floorNumber")} />
+          <input type="number" className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" placeholder="Floor number (e.g. 1)" {...createForm.register("floorNumber")} />
           <FormErrorText message={createForm.formState.errors.floorNumber?.message} />
         </div>
         <button type="submit" className="rounded-md bg-slate-900 px-4 py-2 text-sm text-white" disabled={createMutation.isPending}>
@@ -338,11 +338,11 @@ export default function RoomsPage() {
       <Modal open={Boolean(editingRoom)} title="Edit Room" onClose={() => setEditingRoom(null)}>
         <form className="grid gap-3" onSubmit={editForm.handleSubmit((values) => updateMutation.mutate(values))}>
           <div>
-            <input className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" placeholder="Room Number" {...editForm.register("roomNumber")} />
+            <input className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" placeholder="Updated room number (e.g. 101)" {...editForm.register("roomNumber")} />
             <FormErrorText message={editForm.formState.errors.roomNumber?.message} />
           </div>
           <div>
-            <select className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" {...editForm.register("roomStatus")}>
+            <select className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" title="AVAILABLE, OCCUPIED, MAINTENANCE, or OUT_OF_SERVICE" {...editForm.register("roomStatus")}>
               <option value="AVAILABLE">AVAILABLE</option>
               <option value="OCCUPIED">OCCUPIED</option>
               <option value="MAINTENANCE">MAINTENANCE</option>

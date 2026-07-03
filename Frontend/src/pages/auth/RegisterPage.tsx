@@ -5,6 +5,7 @@ import toast from "react-hot-toast";
 import { Link, useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { Spinner } from "@/components/common/Spinner";
+import { PasswordInput } from "@/components/common/PasswordInput";
 import { useRegister } from "@/hooks/useAuthActions";
 import type { Gender } from "@/types/api";
 
@@ -70,6 +71,7 @@ export default function RegisterPage() {
             <input
               id="firstName"
               className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-slate-500"
+              placeholder="Enter your first name (e.g. Rahul)"
               {...register("firstName")}
             />
             {errors.firstName ? <p className="mt-1 text-xs text-rose-600">{errors.firstName.message}</p> : null}
@@ -82,6 +84,7 @@ export default function RegisterPage() {
             <input
               id="lastName"
               className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-slate-500"
+              placeholder="Enter your last name (e.g. Sharma)"
               {...register("lastName")}
             />
             {errors.lastName ? <p className="mt-1 text-xs text-rose-600">{errors.lastName.message}</p> : null}
@@ -113,6 +116,7 @@ export default function RegisterPage() {
             id="email"
             type="email"
             className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-slate-500"
+            placeholder="Enter email address (e.g. you@example.com)"
             {...register("email")}
           />
           {errors.email ? <p className="mt-1 text-xs text-rose-600">{errors.email.message}</p> : null}
@@ -125,6 +129,7 @@ export default function RegisterPage() {
           <input
             id="phone"
             className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-slate-500"
+            placeholder="Enter 10-digit mobile number (e.g. 9876543210)"
             {...register("phone")}
           />
           {errors.phone ? <p className="mt-1 text-xs text-rose-600">{errors.phone.message}</p> : null}
@@ -134,10 +139,9 @@ export default function RegisterPage() {
           <label htmlFor="password" className="mb-1 block text-sm font-medium text-slate-700">
             Password
           </label>
-          <input
+          <PasswordInput
             id="password"
-            type="password"
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-slate-500"
+            placeholder="Create a password (minimum 6 characters)"
             {...register("password")}
           />
           {errors.password ? <p className="mt-1 text-xs text-rose-600">{errors.password.message}</p> : null}

@@ -6,7 +6,6 @@ import toast from "react-hot-toast";
 import { z } from "zod";
 import { PageHeader } from "@/components/common/PageHeader";
 import { AuthService } from "@/services/AuthService";
-import { UserService } from "@/services/UserService";
 import { useAuthStore } from "@/store/authStore";
 import { getApiErrorMessage } from "@/utils/http";
 import { primaryButtonClass } from "@/utils/ui";
@@ -57,11 +56,10 @@ export default function CustomerProfilePage() {
         throw new Error("No active user session.");
       }
 
-      return UserService.updateUser(activeUser.userId, {
+      return AuthService.updateProfile({
         firstName: payload.firstName,
         lastName: payload.lastName,
         phone: payload.phone,
-        accountStatus: activeUser.accountStatus,
       });
     },
     onSuccess: (updatedUser) => {

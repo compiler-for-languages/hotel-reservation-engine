@@ -11,10 +11,7 @@ import { getApiErrorMessage } from "@/utils/http";
 
 export default function PaymentsAdminPage() {
   const queryClient = useQueryClient();
-  const [pendingStartPaymentId, setPendingStartPaymentId] = useState<number | null>(null);
-  const [pendingFailPaymentId, setPendingFailPaymentId] = useState<number | null>(null);
   const [pendingRefundPaymentId, setPendingRefundPaymentId] = useState<number | null>(null);
-  const [pendingDeletePaymentId, setPendingDeletePaymentId] = useState<number | null>(null);
   const [lookupPaymentId, setLookupPaymentId] = useState("");
   const [statusFilter, setStatusFilter] = useState<PaymentStatus>("PENDING");
 
@@ -26,24 +23,6 @@ export default function PaymentsAdminPage() {
   } = useQuery({
     queryKey: ["adminPayments"],
     queryFn: PaymentService.getAllPayments,
-  });
-
-  const startMutation = useMutation({
-    mutationFn: (paymentId: number) => PaymentService.startPayment(paymentId),
-    onSuccess: () => {
-      toast.success("Payment moved to processing.");
-      void queryClient.invalidateQueries({ queryKey: ["adminPayments"] });
-    },
-    onError: (error) => toast.error(getApiErrorMessage(error, "Unable to update payment.")),
-  });
-
-  const failMutation = useMutation({
-    mutationFn: (paymentId: number) => PaymentService.markPaymentFailed(paymentId),
-    onSuccess: () => {
-      toast.success("Payment marked as failed.");
-      void queryClient.invalidateQueries({ queryKey: ["adminPayments"] });
-    },
-    onError: (error) => toast.error(getApiErrorMessage(error, "Unable to update payment.")),
   });
 
   const refundMutation = useMutation({
@@ -65,21 +44,13 @@ export default function PaymentsAdminPage() {
     onError: (error) => toast.error(getApiErrorMessage(error, "Unable to fetch payment by ID.")),
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: (paymentId: number) => PaymentService.deletePayment(paymentId),
-    onSuccess: () => {
-      toast.success("Payment deleted successfully.");
-      void queryClient.invalidateQueries({ queryKey: ["adminPayments"] });
-    },
-    onError: (error) => toast.error(getApiErrorMessage(error, "Unable to delete payment.")),
-  });
 
   return (
     <div className="space-y-4">
       <h2 className="text-2xl font-semibold text-slate-900">Payments</h2>
 
       <div className="grid gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-4">
-        <select className="rounded-md border border-slate-300 px-3 py-2 text-sm" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as PaymentStatus)}>
+        <select className="rounded-md border border-slate-300 px-3 py-2 text-sm" title="Filter payments by status" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as PaymentStatus)}>
           <option value="PENDING">PENDING</option>
           <option value="PROCESSING">PROCESSING</option>
           <option value="SUCCESS">SUCCESS</option>
@@ -89,7 +60,7 @@ export default function PaymentsAdminPage() {
         <button type="button" onClick={() => byStatusMutation.mutate(statusFilter)} className="rounded-md border border-slate-300 px-3 py-2 text-sm">
           Get By Status
         </button>
-        <input value={lookupPaymentId} onChange={(event) => setLookupPaymentId(event.target.value)} type="number" placeholder="Payment ID" className="rounded-md border border-slate-300 px-3 py-2 text-sm" />
+        <input value={lookupPaymentId} onChange={(event) => setLookupPaymentId(event.target.value)} type="number" placeholder="Enter payment ID (e.g. 15)" className="rounded-md border border-slate-300 px-3 py-2 text-sm" />
         <button
           type="button"
           onClick={() => {
@@ -158,74 +129,20 @@ export default function PaymentsAdminPage() {
             header: "Actions",
             render: (row) => (
               <div className="flex gap-2">
-                <button
-                  type="button"
-                  className="rounded border border-slate-300 px-2 py-1 text-xs"
-                  onClick={() => setPendingStartPaymentId(row.paymentId)}
-                  disabled={startMutation.isPending || failMutation.isPending || refundMutation.isPending}
-                >
-                  Start
-                </button>
-                <button
-                  type="button"
-                  className="rounded border border-rose-200 px-2 py-1 text-xs text-rose-700"
-                  onClick={() => setPendingFailPaymentId(row.paymentId)}
-                  disabled={startMutation.isPending || failMutation.isPending || refundMutation.isPending}
-                >
-                  Fail
-                </button>
-                <button
-                  type="button"
-                  className="rounded border border-violet-200 px-2 py-1 text-xs text-violet-700"
-                  onClick={() => setPendingRefundPaymentId(row.paymentId)}
-                  disabled={startMutation.isPending || failMutation.isPending || refundMutation.isPending}
-                >
-                  Refund
-                </button>
-                <button
-                  type="button"
-                  className="rounded border border-rose-200 px-2 py-1 text-xs text-rose-700"
-                  onClick={() => setPendingDeletePaymentId(row.paymentId)}
-                  disabled={deleteMutation.isPending}
-                >
-                  Delete
-                </button>
+                {row.paymentStatus === "SUCCESS" ? (
+                  <button
+                    type="button"
+                    className="rounded border border-violet-200 px-2 py-1 text-xs text-violet-700"
+                    onClick={() => setPendingRefundPaymentId(row.paymentId)}
+                    disabled={refundMutation.isPending}
+                  >
+                    Refund
+                  </button>
+                ) : null}
               </div>
             ),
           },
         ]}
-      />
-
-      <ConfirmDialog
-        open={Boolean(pendingStartPaymentId)}
-        title="Start Payment"
-        description="Mark this payment as processing?"
-        confirmLabel="Start"
-        isConfirming={startMutation.isPending}
-        onCancel={() => setPendingStartPaymentId(null)}
-        onConfirm={() => {
-          if (pendingStartPaymentId) {
-            startMutation.mutate(pendingStartPaymentId, {
-              onSettled: () => setPendingStartPaymentId(null),
-            });
-          }
-        }}
-      />
-
-      <ConfirmDialog
-        open={Boolean(pendingFailPaymentId)}
-        title="Mark Payment Failed"
-        description="This will mark the payment as FAILED. Continue?"
-        confirmLabel="Mark Failed"
-        isConfirming={failMutation.isPending}
-        onCancel={() => setPendingFailPaymentId(null)}
-        onConfirm={() => {
-          if (pendingFailPaymentId) {
-            failMutation.mutate(pendingFailPaymentId, {
-              onSettled: () => setPendingFailPaymentId(null),
-            });
-          }
-        }}
       />
 
       <ConfirmDialog
@@ -244,21 +161,6 @@ export default function PaymentsAdminPage() {
         }}
       />
 
-      <ConfirmDialog
-        open={Boolean(pendingDeletePaymentId)}
-        title="Delete Payment"
-        description="This will permanently delete the selected payment record."
-        confirmLabel="Delete"
-        isConfirming={deleteMutation.isPending}
-        onCancel={() => setPendingDeletePaymentId(null)}
-        onConfirm={() => {
-          if (pendingDeletePaymentId) {
-            deleteMutation.mutate(pendingDeletePaymentId, {
-              onSettled: () => setPendingDeletePaymentId(null),
-            });
-          }
-        }}
-      />
     </div>
   );
 }
