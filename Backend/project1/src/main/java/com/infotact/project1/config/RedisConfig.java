@@ -7,7 +7,7 @@ import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 
 @Configuration
-@Profile("!test")
+//@Profile("!test")
 public class RedisConfig {
 
 //    It creates the Spring component that listens for Redis Pub/Sub messages.

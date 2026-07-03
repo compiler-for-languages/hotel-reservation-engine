@@ -55,7 +55,9 @@ class ReceptionIntegrationTest
         mockMvc.perform(
 
                         patch("/api/payment/start/{paymentId}",
-                                paymentId))
+                                paymentId)
+                                .header("Authorization", "Bearer " + adminToken)
+                )
 
                 .andExpect(status().isOk());
 
@@ -63,6 +65,7 @@ class ReceptionIntegrationTest
 
                         patch("/api/payment/success/{paymentId}",
                                 paymentId)
+                                .header("Authorization", "Bearer " + adminToken)
 
                                 .param(
                                         "gatewayPaymentId",
@@ -83,6 +86,7 @@ class ReceptionIntegrationTest
         mockMvc.perform(
 
                         post("/api/reception/assign-room")
+                                .header("Authorization", "Bearer " + adminToken)
 
                                 .contentType(
                                         MediaType.APPLICATION_JSON)
@@ -127,12 +131,16 @@ class ReceptionIntegrationTest
         // Confirm reservation
         mockMvc.perform(
                         patch("/api/payment/start/{paymentId}",
-                                paymentId))
+                                paymentId)
+                                .header("Authorization", "Bearer " + adminToken)
+
+                )
                 .andExpect(status().isOk());
 
         mockMvc.perform(
                         patch("/api/payment/success/{paymentId}",
                                 paymentId)
+                                .header("Authorization", "Bearer " + adminToken)
                                 .param(
                                         "gatewayPaymentId",
                                         "pay_checkin")
@@ -150,6 +158,7 @@ class ReceptionIntegrationTest
 
         mockMvc.perform(
                         post("/api/reception/assign-room")
+                                .header("Authorization", "Bearer " + adminToken)
                                 .contentType(
                                         MediaType.APPLICATION_JSON)
                                 .content(
@@ -172,6 +181,7 @@ class ReceptionIntegrationTest
 
         mockMvc.perform(
                         post("/api/guest/save")
+                                .header("Authorization", "Bearer " + adminToken)
                                 .contentType(
                                         MediaType.APPLICATION_JSON)
                                 .content(
@@ -194,6 +204,7 @@ class ReceptionIntegrationTest
 
         mockMvc.perform(
                         post("/api/guest/save")
+                                .header("Authorization", "Bearer " + adminToken)
                                 .contentType(
                                         MediaType.APPLICATION_JSON)
                                 .content(
@@ -203,6 +214,7 @@ class ReceptionIntegrationTest
 
         mockMvc.perform(
                         patch("/api/reception/check-in")
+                                .header("Authorization", "Bearer " + adminToken)
                                 .contentType(
                                         MediaType.APPLICATION_JSON)
                                 .content(
@@ -242,7 +254,8 @@ class ReceptionIntegrationTest
         mockMvc.perform(
 
                         patch("/api/payment/start/{paymentId}",
-                                paymentId))
+                                paymentId)
+                                .header("Authorization", "Bearer " + adminToken))
 
                 .andExpect(status().isOk());
 
@@ -250,6 +263,7 @@ class ReceptionIntegrationTest
 
                         patch("/api/payment/success/{paymentId}",
                                 paymentId)
+                                .header("Authorization", "Bearer " + adminToken)
 
                                 .param(
                                         "gatewayPaymentId",
@@ -271,6 +285,7 @@ class ReceptionIntegrationTest
         mockMvc.perform(
 
                         post("/api/reception/assign-room")
+                                .header("Authorization", "Bearer " + adminToken)
 
                                 .contentType(
                                         MediaType.APPLICATION_JSON)
@@ -297,6 +312,7 @@ class ReceptionIntegrationTest
         mockMvc.perform(
 
                         post("/api/guest/save")
+                                .header("Authorization", "Bearer " + adminToken)
 
                                 .contentType(
                                         MediaType.APPLICATION_JSON)
@@ -323,6 +339,7 @@ class ReceptionIntegrationTest
         mockMvc.perform(
 
                         post("/api/guest/save")
+                                .header("Authorization", "Bearer " + adminToken)
 
                                 .contentType(
                                         MediaType.APPLICATION_JSON)
@@ -337,6 +354,7 @@ class ReceptionIntegrationTest
         mockMvc.perform(
 
                         patch("/api/reception/check-in")
+                                .header("Authorization", "Bearer " + adminToken)
 
                                 .contentType(
                                         MediaType.APPLICATION_JSON)
@@ -351,6 +369,7 @@ class ReceptionIntegrationTest
         mockMvc.perform(
 
                         patch("/api/reception/check-out")
+                                .header("Authorization", "Bearer " + adminToken)
 
                                 .contentType(
                                         MediaType.APPLICATION_JSON)

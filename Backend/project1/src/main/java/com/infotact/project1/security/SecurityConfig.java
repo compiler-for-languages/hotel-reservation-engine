@@ -65,6 +65,12 @@ public class SecurityConfig {
 
                                 // ---------------- RECEPTION ----------------
 
+                        .requestMatchers("/api/reception/**")
+                        .hasAnyRole(
+                                "ADMIN",
+                                "RECEPTIONIST"
+                        )
+
                         // ---------------- CUSTOMER / COMMON ----------------
 
                         .requestMatchers(

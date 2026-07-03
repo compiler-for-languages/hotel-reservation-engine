@@ -28,12 +28,12 @@ public class ReceptionController {
 
     private final UserService userService;
 
-    @PostMapping("/customer")
-    public UserResponseDTO createWalkInCustomer(
-            @RequestBody UserRequestDTO requestDTO) {
-
-        return userService.createUser(requestDTO);
-    }
+//    @PostMapping("/customer")
+//    public UserResponseDTO createWalkInCustomer(
+//            @RequestBody UserRequestDTO requestDTO) {
+//
+//        return userService.createUser(requestDTO);
+//    }
 
     /*
      * Assign an available room to a confirmed reservation.

@@ -83,7 +83,10 @@ class AvailabilityIntegrationTest
 
         mockMvc.perform(
 
-                        post("/api/availability/check")
+                post("/api/availability/check")
+
+                        .header("Authorization", "Bearer " + adminToken)
+
 
                                 .contentType(
                                         MediaType.APPLICATION_JSON)
@@ -169,6 +172,8 @@ class AvailabilityIntegrationTest
         mockMvc.perform(
 
                         post("/api/availability/search")
+
+                                .header("Authorization", "Bearer " + adminToken)
 
                                 .contentType(
                                         MediaType.APPLICATION_JSON)

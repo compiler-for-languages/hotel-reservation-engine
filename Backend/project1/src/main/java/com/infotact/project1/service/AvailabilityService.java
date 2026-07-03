@@ -74,6 +74,12 @@ public class AvailabilityService {
                         hold.getCheckInDate().isBefore(requestDTO.getCheckOutDate()) &&
                                 hold.getCheckOutDate().isAfter(requestDTO.getCheckInDate()))
                 .count();
+        System.out.println("\n========== AVAILABILITY ==========");
+        System.out.println("Room Type ID   : " + roomType.getRoomTypeId());
+        System.out.println("Total Rooms    : " + totalRooms);
+        System.out.println("Booked Rooms   : " + bookedRooms);
+        System.out.println("Active Holds   : " + activeHolds);
+        System.out.println("==================================\n");
 
         return mapToResponse(
                 roomType,

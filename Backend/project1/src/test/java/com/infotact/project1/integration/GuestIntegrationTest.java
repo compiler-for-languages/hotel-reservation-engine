@@ -73,6 +73,8 @@ class GuestIntegrationTest
 
                         post("/api/guest/save")
 
+                                .header("Authorization", "Bearer " + adminToken)
+
                                 .contentType(
                                         MediaType.APPLICATION_JSON)
 
@@ -136,6 +138,8 @@ class GuestIntegrationTest
 
                                 post("/api/guest/save")
 
+                                        .header("Authorization", "Bearer " + adminToken)
+
                                         .contentType(
                                                 MediaType.APPLICATION_JSON)
 
@@ -156,8 +160,9 @@ class GuestIntegrationTest
 
         mockMvc.perform(
 
-                        get("/api/guest/get/{guestId}",
-                                guestId))
+                        get("/api/guest/get/{guestId}", guestId)
+
+                                .header("Authorization", "Bearer " + adminToken))
 
                 .andExpect(status().isOk())
 
@@ -203,6 +208,7 @@ class GuestIntegrationTest
         mockMvc.perform(
 
                         post("/api/guest/save")
+                                .header("Authorization", "Bearer " + adminToken)
 
                                 .contentType(
                                         MediaType.APPLICATION_JSON)
@@ -216,6 +222,8 @@ class GuestIntegrationTest
         mockMvc.perform(
 
                         get("/api/guest/getbyreservation")
+
+                                .header("Authorization", "Bearer " + adminToken)
 
                                 .param(
                                         "reservationId",
@@ -264,6 +272,7 @@ class GuestIntegrationTest
                 mockMvc.perform(
 
                                 post("/api/guest/save")
+                                        .header("Authorization", "Bearer " + adminToken)
 
                                         .contentType(
                                                 MediaType.APPLICATION_JSON)
@@ -294,8 +303,9 @@ class GuestIntegrationTest
 
         mockMvc.perform(
 
-                        patch("/api/guest/update/{guestId}",
-                                guestId)
+                        patch("/api/guest/update/{guestId}", guestId)
+
+                                .header("Authorization", "Bearer " + adminToken)
 
                                 .contentType(
                                         MediaType.APPLICATION_JSON)
@@ -348,6 +358,7 @@ class GuestIntegrationTest
                 mockMvc.perform(
 
                                 post("/api/guest/save")
+                                        .header("Authorization", "Bearer " + adminToken)
 
                                         .contentType(
                                                 MediaType.APPLICATION_JSON)
@@ -369,8 +380,9 @@ class GuestIntegrationTest
 
         mockMvc.perform(
 
-                        delete("/api/guest/delete/{guestId}",
-                                guestId))
+                        delete("/api/guest/delete/{guestId}", guestId)
+
+                                .header("Authorization", "Bearer " + adminToken))
 
                 .andExpect(status().isOk())
 

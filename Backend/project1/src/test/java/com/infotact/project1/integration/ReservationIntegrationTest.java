@@ -12,7 +12,8 @@ import org.springframework.http.MediaType;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-
+import com.infotact.project1.dto.request.RoomRequestDTO;
+import com.infotact.project1.enums.RoomStatus;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -120,6 +121,30 @@ class ReservationIntegrationTest
                 objectMapper.readTree(roomTypeResponse)
                         .get("roomTypeId")
                         .asLong();
+
+        RoomRequestDTO room =
+                new RoomRequestDTO();
+
+        room.setRoomNumber("101");
+        room.setRoomTypeId(roomTypeId);
+        room.setFloorNumber(1);
+        room.setRoomStatus(RoomStatus.AVAILABLE);
+
+        mockMvc.perform(
+
+                        post("/api/admin/room/save")
+
+                                .header(
+                                        "Authorization",
+                                        "Bearer " + adminToken)
+
+                                .contentType(
+                                        MediaType.APPLICATION_JSON)
+
+                                .content(
+                                        objectMapper.writeValueAsString(room)))
+
+                .andExpect(status().isOk());
 
         ReservationRequestDTO reservation =
                 new ReservationRequestDTO();
@@ -246,6 +271,30 @@ class ReservationIntegrationTest
                 objectMapper.readTree(roomTypeResponse)
                         .get("roomTypeId")
                         .asLong();
+
+        RoomRequestDTO room =
+                new RoomRequestDTO();
+
+        room.setRoomNumber("102");
+        room.setRoomTypeId(roomTypeId);
+        room.setFloorNumber(1);
+        room.setRoomStatus(RoomStatus.AVAILABLE);
+
+        mockMvc.perform(
+
+                        post("/api/admin/room/save")
+
+                                .header(
+                                        "Authorization",
+                                        "Bearer " + adminToken)
+
+                                .contentType(
+                                        MediaType.APPLICATION_JSON)
+
+                                .content(
+                                        objectMapper.writeValueAsString(room)))
+
+                .andExpect(status().isOk());
 
         // ---------- Create Reservation ----------
 
@@ -393,6 +442,30 @@ class ReservationIntegrationTest
                         .get("roomTypeId")
                         .asLong();
 
+        RoomRequestDTO room =
+                new RoomRequestDTO();
+
+        room.setRoomNumber("103");
+        room.setRoomTypeId(roomTypeId);
+        room.setFloorNumber(1);
+        room.setRoomStatus(RoomStatus.AVAILABLE);
+
+        mockMvc.perform(
+
+                        post("/api/admin/room/save")
+
+                                .header(
+                                        "Authorization",
+                                        "Bearer " + adminToken)
+
+                                .contentType(
+                                        MediaType.APPLICATION_JSON)
+
+                                .content(
+                                        objectMapper.writeValueAsString(room)))
+
+                .andExpect(status().isOk());
+
         ReservationRequestDTO reservation =
                 new ReservationRequestDTO();
 
@@ -525,6 +598,30 @@ class ReservationIntegrationTest
                         .get("roomTypeId")
                         .asLong();
 
+        RoomRequestDTO room =
+                new RoomRequestDTO();
+
+        room.setRoomNumber("104");
+        room.setRoomTypeId(roomTypeId);
+        room.setFloorNumber(1);
+        room.setRoomStatus(RoomStatus.AVAILABLE);
+
+        mockMvc.perform(
+
+                        post("/api/admin/room/save")
+
+                                .header(
+                                        "Authorization",
+                                        "Bearer " + adminToken)
+
+                                .contentType(
+                                        MediaType.APPLICATION_JSON)
+
+                                .content(
+                                        objectMapper.writeValueAsString(room)))
+
+                .andExpect(status().isOk());
+
         ReservationRequestDTO reservation =
                 new ReservationRequestDTO();
 
@@ -654,6 +751,30 @@ class ReservationIntegrationTest
                 objectMapper.readTree(roomTypeResponse)
                         .get("roomTypeId")
                         .asLong();
+
+        RoomRequestDTO room =
+                new RoomRequestDTO();
+
+        room.setRoomNumber("105");
+        room.setRoomTypeId(roomTypeId);
+        room.setFloorNumber(1);
+        room.setRoomStatus(RoomStatus.AVAILABLE);
+
+        mockMvc.perform(
+
+                        post("/api/admin/room/save")
+
+                                .header(
+                                        "Authorization",
+                                        "Bearer " + adminToken)
+
+                                .contentType(
+                                        MediaType.APPLICATION_JSON)
+
+                                .content(
+                                        objectMapper.writeValueAsString(room)))
+
+                .andExpect(status().isOk());
 
         ReservationRequestDTO reservation =
                 new ReservationRequestDTO();
@@ -799,6 +920,30 @@ class ReservationIntegrationTest
                 objectMapper.readTree(roomTypeResponse)
                         .get("roomTypeId")
                         .asLong();
+
+        RoomRequestDTO room =
+                new RoomRequestDTO();
+
+        room.setRoomNumber("106");
+        room.setRoomTypeId(roomTypeId);
+        room.setFloorNumber(1);
+        room.setRoomStatus(RoomStatus.AVAILABLE);
+
+        mockMvc.perform(
+
+                        post("/api/admin/room/save")
+
+                                .header(
+                                        "Authorization",
+                                        "Bearer " + adminToken)
+
+                                .contentType(
+                                        MediaType.APPLICATION_JSON)
+
+                                .content(
+                                        objectMapper.writeValueAsString(room)))
+
+                .andExpect(status().isOk());
 
         ReservationRequestDTO reservation =
                 new ReservationRequestDTO();

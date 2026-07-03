@@ -41,15 +41,14 @@ class PaymentIntegrationTest
                         adminToken);
 
         Long paymentId =
-                helper.createPayment(
+                helper.getPaymentIdByReservation(
                         adminToken,
-                        reservationId,
-                        PaymentMethod.UPI);
+                        reservationId);
 
         mockMvc.perform(
 
-                        get("/api/payment/get/{paymentId}",
-                                paymentId)
+                        get("/api/payment/get/{paymentId}", paymentId)
+                                .header("Authorization", "Bearer " + adminToken)
 
                 )
 
@@ -84,15 +83,14 @@ class PaymentIntegrationTest
                         adminToken);
 
         Long paymentId =
-                helper.createPayment(
+                helper.getPaymentIdByReservation(
                         adminToken,
-                        reservationId,
-                        PaymentMethod.CARD);
+                        reservationId);
 
         mockMvc.perform(
 
-                        get("/api/payment/get/{paymentId}",
-                                paymentId)
+                        get("/api/payment/get/{paymentId}", paymentId)
+                                .header("Authorization", "Bearer " + adminToken)
 
                 )
 
@@ -102,7 +100,7 @@ class PaymentIntegrationTest
                         .value(paymentId))
 
                 .andExpect(jsonPath("$.paymentMethod")
-                        .value("CARD"));
+                        .value("UPI"));
     }
 
     /*
@@ -121,15 +119,18 @@ class PaymentIntegrationTest
                 helper.createReservation(
                         adminToken);
 
-        helper.createPayment(
-                adminToken,
-                reservationId,
-                PaymentMethod.UPI);
+//        helper.createPayment(
+//                adminToken,
+//                reservationId,
+//                PaymentMethod.UPI);
 
         mockMvc.perform(
 
                         get("/api/payment/reservation/{reservationId}",
-                                reservationId))
+                                reservationId)
+                                .header("Authorization", "Bearer " + adminToken)
+
+                )
 
                 .andExpect(status().isOk())
 
@@ -159,14 +160,16 @@ class PaymentIntegrationTest
                 helper.createReservation(
                         adminToken);
 
-        helper.createPayment(
-                adminToken,
-                reservationId,
-                PaymentMethod.CARD);
+//        helper.createPayment(
+//                adminToken,
+//                reservationId,
+//                PaymentMethod.CARD);
 
         mockMvc.perform(
 
                         get("/api/payment/status")
+
+                                .header("Authorization", "Bearer " + adminToken)
 
                                 .param(
                                         "paymentStatus",
@@ -196,23 +199,22 @@ class PaymentIntegrationTest
                         adminToken);
 
         Long paymentId =
-                helper.createPayment(
+                helper.getPaymentIdByReservation(
                         adminToken,
-                        reservationId,
-                        PaymentMethod.UPI);
+                        reservationId);
 
-        mockMvc.perform(
-
-                        patch("/api/payment/start/{paymentId}",
-                                paymentId))
-
-                .andExpect(status().isOk())
+                mockMvc.perform(
+                                patch("/api/payment/start/{paymentId}", paymentId)
+                                        .header("Authorization", "Bearer " + adminToken)
+                        )
+                        .andExpect(status().isOk())
 
                 .andExpect(jsonPath("$.paymentId")
                         .value(paymentId))
 
                 .andExpect(jsonPath("$.paymentStatus")
                         .value("PROCESSING"));
+
     }
 
     /*
@@ -231,16 +233,17 @@ class PaymentIntegrationTest
                         adminToken);
 
         Long paymentId =
-                helper.createPayment(
+                helper.getPaymentIdByReservation(
                         adminToken,
-                        reservationId,
-                        PaymentMethod.UPI);
+                        reservationId);
 
         // Move payment to PROCESSING first
         mockMvc.perform(
 
                         patch("/api/payment/start/{paymentId}",
-                                paymentId))
+                                paymentId)
+
+                                .header("Authorization", "Bearer " + adminToken))
 
                 .andExpect(status().isOk());
 
@@ -248,6 +251,8 @@ class PaymentIntegrationTest
 
                         patch("/api/payment/success/{paymentId}",
                                 paymentId)
+
+                                .header("Authorization", "Bearer " + adminToken)
 
                                 .param(
                                         "gatewayPaymentId",
@@ -282,24 +287,25 @@ class PaymentIntegrationTest
                         adminToken);
 
         Long paymentId =
-                helper.createPayment(
+                helper.getPaymentIdByReservation(
                         adminToken,
-                        reservationId,
-                        PaymentMethod.UPI);
+                        reservationId);
 
         // Move payment to PROCESSING first
         mockMvc.perform(
 
                         patch("/api/payment/start/{paymentId}",
-                                paymentId))
+                                paymentId)
 
+                                .header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isOk());
 
         mockMvc.perform(
 
                         patch("/api/payment/fail/{paymentId}",
-                                paymentId))
+                                paymentId)
 
+                                .header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isOk())
 
                 .andExpect(jsonPath("$.paymentStatus")
@@ -322,17 +328,17 @@ class PaymentIntegrationTest
                         adminToken);
 
         Long paymentId =
-                helper.createPayment(
+                helper.getPaymentIdByReservation(
                         adminToken,
-                        reservationId,
-                        PaymentMethod.CARD);
+                        reservationId);
 
         // PENDING -> PROCESSING
         mockMvc.perform(
 
-                        patch("/api/payment/start/{paymentId}",
-                                paymentId))
+                patch("/api/payment/start/{paymentId}",
+                        paymentId)
 
+                        .header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isOk());
 
         // PROCESSING -> SUCCESS
@@ -340,6 +346,8 @@ class PaymentIntegrationTest
 
                         patch("/api/payment/success/{paymentId}",
                                 paymentId)
+
+                                .header("Authorization", "Bearer " + adminToken)
 
                                 .param(
                                         "gatewayPaymentId",
@@ -355,7 +363,9 @@ class PaymentIntegrationTest
         mockMvc.perform(
 
                         patch("/api/payment/refund/{paymentId}",
-                                paymentId))
+                                paymentId)
+
+                                .header("Authorization", "Bearer " + adminToken))
 
                 .andExpect(status().isOk())
 

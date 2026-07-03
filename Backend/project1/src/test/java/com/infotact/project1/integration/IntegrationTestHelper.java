@@ -22,6 +22,7 @@ import java.time.LocalDate;
 import com.infotact.project1.dto.request.PaymentRequestDTO;
 import com.infotact.project1.dto.request.RoomRequestDTO;
 import com.infotact.project1.enums.RoomStatus;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
 @Component
 @RequiredArgsConstructor
@@ -155,6 +156,8 @@ public class IntegrationTestHelper {
         Long roomTypeId =
                 createRoomType(
                         adminToken);
+
+        createRoom(adminToken, roomTypeId);
 
         ReservationRequestDTO request =
                 new ReservationRequestDTO();
@@ -313,6 +316,33 @@ public class IntegrationTestHelper {
                         response);
 
         return json.get("roomId")
+                .asLong();
+    }
+
+    public Long getPaymentIdByReservation(
+            String adminToken,
+            Long reservationId)
+            throws Exception {
+
+        String response =
+                mockMvc.perform(
+
+                                get("/api/payment/reservation/{reservationId}",
+                                        reservationId)
+
+                        .header(
+                                "Authorization",
+                                "Bearer " + adminToken)
+                        )
+
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString();
+
+        JsonNode json =
+                objectMapper.readTree(response);
+
+        return json.get("paymentId")
                 .asLong();
     }
 
