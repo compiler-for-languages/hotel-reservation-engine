@@ -3,12 +3,18 @@ package com.infotact.project1.service;
 import com.infotact.project1.dto.request.GuestPatchRequestDTO;
 import com.infotact.project1.dto.request.GuestRequestDTO;
 import com.infotact.project1.dto.response.GuestResponseDTO;
+import com.infotact.project1.enums.Role;
 import com.infotact.project1.model.Guest;
+import com.infotact.project1.enums.ReservationStatus;
 import com.infotact.project1.model.Reservation;
+import com.infotact.project1.model.User;
 import com.infotact.project1.repository.GuestRepository;
 import com.infotact.project1.repository.ReservationRepository;
+import com.infotact.project1.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.List;
 
@@ -24,6 +30,8 @@ public class GuestService {
     // Dependency remains immutable after injection
     private final ReservationRepository reservationRepository;
 
+    private final UserRepository userRepository;
+
     public GuestResponseDTO createGuest(
             GuestRequestDTO requestDTO) {
 
@@ -32,17 +40,19 @@ public class GuestService {
                 reservationRepository.findById(
                                 requestDTO.getReservationId())
                         .orElseThrow(() ->
-                                new RuntimeException(
-                                        "Reservation not found with id: "
-                                                + requestDTO.getReservationId()));
+                                new RuntimeException("RESERVATION_NOT_FOUND"));
+
+        if (reservation.getReservationStatus() == ReservationStatus.CHECKED_OUT) {
+            throw new RuntimeException("RESERVATION_ALREADY_CHECKED_OUT");
+        }
+        authorizeGuestAccess(reservation);
 
         long enteredGuests =
                 guestRepository.countByReservation(reservation);
 
         if (enteredGuests >= reservation.getGuestCount()) {
 
-            throw new RuntimeException(
-                    "Maximum guest limit reached for this reservation.");
+            throw new RuntimeException("GUEST_LIMIT_REACHED");
         }
 
         Guest guest = new Guest();
@@ -50,7 +60,10 @@ public class GuestService {
         guest.setReservation(reservation);
         guest.setFirstName(requestDTO.getFirstName());
         guest.setLastName(requestDTO.getLastName());
-        guest.setPhone(requestDTO.getPhone());
+        guest.setPhone(
+                requestDTO.getPhone() == null || requestDTO.getPhone().isBlank()
+                        ? null
+                        : requestDTO.getPhone());
         guest.setGender(requestDTO.getGender());
         guest.setDateOfBirth(requestDTO.getDateOfBirth());
 
@@ -72,8 +85,7 @@ public class GuestService {
 
         Guest guest = guestRepository.findById(guestId)
                 .orElseThrow(() ->
-                        new RuntimeException(
-                                "Guest not found with id: " + guestId));
+                        new RuntimeException("GUEST_NOT_FOUND"));
 
         return mapToResponse(guest);
     }
@@ -83,13 +95,11 @@ public class GuestService {
             Long reservationId) {
 
         Reservation reservation = reservationRepository.findById(reservationId)
-                .orElseThrow(() -> new RuntimeException("Reservation not found"));
+                .orElseThrow(() -> new RuntimeException("RESERVATION_NOT_FOUND"));
 
-//        System.out.println("Reservation = " + reservation.getReservationId());
+        authorizeGuestAccess(reservation);
 
         List<Guest> guests = guestRepository.findByReservation(reservation);
-
-//        System.out.println("Guests found = " + guests.size());
 
         return guests.stream()
                 .map(this::mapToResponse)
@@ -103,8 +113,13 @@ public class GuestService {
 
         Guest guest = guestRepository.findById(guestId)
                 .orElseThrow(() ->
-                        new RuntimeException(
-                                "Guest not found with id: " + guestId));
+                        new RuntimeException("GUEST_NOT_FOUND"));
+
+        if (guest.getReservation().getReservationStatus() == ReservationStatus.CHECKED_OUT) {
+            throw new RuntimeException("RESERVATION_ALREADY_CHECKED_OUT");
+        }
+
+        authorizeGuestAccess(guest.getReservation());
 
         if (requestDTO.getFirstName() != null) {
             guest.setFirstName(requestDTO.getFirstName());
@@ -135,8 +150,13 @@ public class GuestService {
 
         Guest guest = guestRepository.findById(guestId)
                 .orElseThrow(() ->
-                        new RuntimeException(
-                                "Guest not found with id: " + guestId));
+                        new RuntimeException("GUEST_NOT_FOUND"));
+
+        if (guest.getReservation().getReservationStatus() == ReservationStatus.CHECKED_OUT) {
+            throw new RuntimeException("RESERVATION_ALREADY_CHECKED_OUT");
+        }
+
+        authorizeGuestAccess(guest.getReservation());
 
         guestRepository.delete(guest);
     }
@@ -146,17 +166,14 @@ public class GuestService {
         Reservation reservation =
                 reservationRepository.findById(reservationId)
                         .orElseThrow(() ->
-                                new RuntimeException(
-                                        "Reservation not found with id: "
-                                                + reservationId));
+                                new RuntimeException("RESERVATION_NOT_FOUND"));
 
         long enteredGuests =
                 guestRepository.countByReservation(reservation);
 
         if (enteredGuests != reservation.getGuestCount()) {
 
-            throw new RuntimeException(
-                    "Please enter details for all guests before check-in.");
+            throw new RuntimeException("GUEST_DETAILS_INCOMPLETE");
         }
     }
 
@@ -175,5 +192,34 @@ public class GuestService {
                 .gender(guest.getGender())
                 .dateOfBirth(guest.getDateOfBirth())
                 .build();
+    }
+
+    private void authorizeGuestAccess(Reservation reservation) {
+
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new RuntimeException("AUTHENTICATION_REQUIRED");
+        }
+
+        User currentUser = userRepository.findByEmail(authentication.getName())
+                .orElseThrow(() ->
+                        new RuntimeException("USER_NOT_FOUND"));
+
+        Role role = currentUser.getRole();
+
+        if (role == Role.ADMIN || role == Role.RECEPTIONIST) {
+            return;
+        }
+
+        if (role == Role.CUSTOMER) {
+            if (!reservation.getUser().getUserId().equals(currentUser.getUserId())) {
+                throw new RuntimeException("ACCESS_DENIED");
+            }
+            return;
+        }
+
+        throw new RuntimeException("ACCESS_DENIED");
     }
 }

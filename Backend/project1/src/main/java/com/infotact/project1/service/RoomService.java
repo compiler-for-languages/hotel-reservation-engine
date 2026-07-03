@@ -30,15 +30,12 @@ public class RoomService {
         // Fetch referenced room type before creating room
         RoomType roomType = roomTypeRepository.findById(requestDTO.getRoomTypeId())
                 .orElseThrow(() ->
-                        new RuntimeException("Room Type not found with id: "
-                                + requestDTO.getRoomTypeId()));
+                        new RuntimeException("ROOM_TYPE_NOT_FOUND"));
 
         // Prevent duplicate room numbers
         roomRepository.findByRoomNumber(requestDTO.getRoomNumber().trim())
                 .ifPresent(room -> {
-                    throw new RuntimeException(
-                            "Room number already exists: "
-                                    + requestDTO.getRoomNumber());
+                    throw new RuntimeException("ROOM_NUMBER_EXISTS");
                 });
 
         Room room = new Room();
@@ -68,7 +65,7 @@ public class RoomService {
 
         Room room = roomRepository.findById(roomId)
                 .orElseThrow(() ->
-                        new RuntimeException("Room not found with id: " + roomId));
+                        new RuntimeException("ROOM_NOT_FOUND"));
 
         return mapToResponse(room);
     }
@@ -79,8 +76,7 @@ public class RoomService {
 
         Room room = roomRepository.findByRoomNumber(roomNumber)
                 .orElseThrow(() ->
-                        new RuntimeException("Room not found with room number: "
-                                + roomNumber));
+                        new RuntimeException("ROOM_NOT_FOUND"));
 
         return mapToResponse(room);
     }
@@ -91,8 +87,7 @@ public class RoomService {
 
         RoomType roomType = roomTypeRepository.findById(roomTypeId)
                 .orElseThrow(() ->
-                        new RuntimeException("Room Type not found with id: "
-                                + roomTypeId));
+                        new RuntimeException("ROOM_TYPE_NOT_FOUND"));
 
         // Stream API for DTO conversion
         return roomRepository.findByRoomType(roomType)
@@ -110,8 +105,7 @@ public class RoomService {
 
                 // Prevents querying with invalid room type
                 .orElseThrow(() ->
-                        new RuntimeException(
-                                "Room Type not found. Please provide a valid room type id."));
+                        new RuntimeException("ROOM_TYPE_NOT_FOUND"));
 
         // Stream API for DTO conversion
         return roomRepository.findByRoomTypeAndRoomStatus(
@@ -127,7 +121,7 @@ public class RoomService {
 
         Room room = roomRepository.findById(roomId)
                 .orElseThrow(() ->
-                        new RuntimeException("Room not found with id: " + roomId));
+                        new RuntimeException("ROOM_NOT_FOUND"));
 
         roomRepository.delete(room);
     }
@@ -141,7 +135,7 @@ public class RoomService {
 
                 // Prevents updates on non-existent records
                 .orElseThrow(() ->
-                        new RuntimeException("Room not found with id: " + roomId));
+                        new RuntimeException("ROOM_NOT_FOUND"));
 
         if (requestDTO.getRoomNumber() != null) {
 
@@ -152,9 +146,7 @@ public class RoomService {
                         if (!existingRoom.getRoomId()
                                 .equals(room.getRoomId())) {
 
-                            throw new RuntimeException(
-                                    "Room number already exists: "
-                                            + requestDTO.getRoomNumber());
+                            throw new RuntimeException("ROOM_NUMBER_EXISTS");
                         }
                     });
 
