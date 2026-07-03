@@ -2,13 +2,17 @@ package com.infotact.project1.service;
 
 import com.infotact.project1.dto.request.*;
 import com.infotact.project1.dto.response.AvailabilityResponseDTO;
+import com.infotact.project1.dto.response.GuestResponseDTO;
 import com.infotact.project1.dto.response.ReservationResponseDTO;
 import com.infotact.project1.enums.ReservationStatus;
+import com.infotact.project1.model.Guest;
 import com.infotact.project1.model.Reservation;
 import com.infotact.project1.model.RoomType;
 import com.infotact.project1.model.User;
 
+import com.infotact.project1.repository.GuestRepository;
 import com.infotact.project1.repository.ReservationRepository;
+import com.infotact.project1.repository.RoomAssignmentRepository;
 import com.infotact.project1.repository.RoomTypeRepository;
 import com.infotact.project1.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -41,6 +45,10 @@ public class ReservationService {
 
     private final PaymentService paymentService;
 
+    private final RoomAssignmentRepository roomAssignmentRepository;
+
+    private final GuestRepository guestRepository;
+
     @Transactional
     public ReservationResponseDTO createReservation(
             ReservationRequestDTO requestDTO) {
@@ -48,32 +56,27 @@ public class ReservationService {
         // Fetch customer creating the reservation
         User user = userRepository.findById(requestDTO.getUserId())
                 .orElseThrow(() ->
-                        new RuntimeException(
-                                "User not found with id: "
-                                        + requestDTO.getUserId()));
+                        new RuntimeException("USER_NOT_FOUND"));
 
         // Fetch requested room type
         RoomType roomType = roomTypeRepository.findById(
                         requestDTO.getRoomTypeId())
                 .orElseThrow(() ->
-                        new RuntimeException(
-                                "Room Type not found with id: "
-                                        + requestDTO.getRoomTypeId()));
+                        new RuntimeException("ROOM_TYPE_NOT_FOUND"));
 //before proceeding we are checking just whether the room exists or not we also need to check whether that particular room type has
 // rooms available to reserve or not
         // Check check-in/check-out validity
         if (!requestDTO.getCheckInDate()
                 .isBefore(requestDTO.getCheckOutDate())) {
 
-            throw new RuntimeException(
-                    "Check-out date must be after check-in date");
+            throw new RuntimeException("INVALID_DATE_RANGE");
         }
 
         // Validate room occupancy capacity
         // Primary customer (may or may not ) + additional guests
 
         if (requestDTO.getGuestCount() > roomType.getCapacity()) {
-            throw new RuntimeException("Room capacity exceeded.");
+            throw new RuntimeException("ROOM_CAPACITY_EXCEEDED");
         }
 
 
@@ -109,9 +112,7 @@ public class ReservationService {
 
             if (!availability.isAvailable()) {
 
-                throw new RuntimeException(
-                        "No rooms available for room type: "
-                                + roomType.getName());
+                throw new RuntimeException("ROOM_UNAVAILABLE");
             }
 
 
@@ -204,9 +205,7 @@ public class ReservationService {
         Reservation reservation =
                 reservationRepository.findById(reservationId)
                         .orElseThrow(() ->
-                                new RuntimeException(
-                                        "Reservation not found with id: "
-                                                + reservationId));
+                                new RuntimeException("RESERVATION_NOT_FOUND"));
 
         return mapToResponse(reservation);
     }
@@ -217,9 +216,7 @@ public class ReservationService {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() ->
-                        new RuntimeException(
-                                "User not found with id: "
-                                        + userId));
+                        new RuntimeException("USER_NOT_FOUND"));
 
         return reservationRepository.findByUser(user)
                 .stream()
@@ -246,9 +243,11 @@ public class ReservationService {
         Reservation reservation =
                 reservationRepository.findById(reservationId)
                         .orElseThrow(() ->
-                                new RuntimeException(
-                                        "Reservation not found with id: "
-                                                + reservationId));
+                                new RuntimeException("RESERVATION_NOT_FOUND"));
+
+        if (reservation.getReservationStatus() == ReservationStatus.CHECKED_OUT) {
+            throw new RuntimeException("RESERVATION_ALREADY_CHECKED_OUT");
+        }
 
         if (requestDTO.getReservationStatus() != null) {
             reservation.setReservationStatus(
@@ -279,9 +278,11 @@ public class ReservationService {
         Reservation reservation =
                 reservationRepository.findById(reservationId)
                         .orElseThrow(() ->
-                                new RuntimeException(
-                                        "Reservation not found with id: "
-                                                + reservationId));
+                                new RuntimeException("RESERVATION_NOT_FOUND"));
+
+        if (roomAssignmentRepository.existsByReservation(reservation)) {
+            throw new RuntimeException("ROOM_ASSIGNMENT_EXISTS");
+        }
 
         reservationRepository.delete(reservation);
     }
@@ -307,6 +308,28 @@ public class ReservationService {
                 .bookingTime(reservation.getBookingTime())
                 .specialRequest(
                         reservation.getSpecialRequest())
+                .guests(mapGuests(reservation))
+                .build();
+    }
+
+    private List<GuestResponseDTO> mapGuests(Reservation reservation) {
+
+        return guestRepository.findByReservation(reservation)
+                .stream()
+                .map(this::mapGuestToResponse)
+                .toList();
+    }
+
+    private GuestResponseDTO mapGuestToResponse(Guest guest) {
+
+        return GuestResponseDTO.builder()
+                .guestId(guest.getGuestId())
+                .reservationId(guest.getReservation().getReservationId())
+                .firstName(guest.getFirstName())
+                .lastName(guest.getLastName())
+                .phone(guest.getPhone())
+                .gender(guest.getGender())
+                .dateOfBirth(guest.getDateOfBirth())
                 .build();
     }
 }

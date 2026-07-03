@@ -24,6 +24,8 @@ public class TodayArrivalResponseDTO {
 
     private Integer guestCount;
 
+    private String guestNames;
+
     private LocalDate checkInDate;
 
     private LocalDate checkOutDate;

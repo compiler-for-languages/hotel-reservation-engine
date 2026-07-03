@@ -28,8 +28,8 @@ public class Payment {
     private Long paymentId;
 
     // Reservation associated with this payment
-    @ManyToOne
-    @JoinColumn(name = "reservation_id", nullable = false)
+    @OneToOne
+    @JoinColumn(name = "reservation_id", nullable = false,unique = true)
     private Reservation reservation;
 
     // BigDecimal avoids floating-point precision issues in monetary calculations

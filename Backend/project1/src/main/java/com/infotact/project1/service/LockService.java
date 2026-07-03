@@ -33,9 +33,7 @@ public class LockService {
             // Prevent multiple users from accessing the same resource simultaneously
             if (!lockAcquired) {
 
-                throw new RuntimeException(
-                        "Unable to acquire lock: "
-                                + lockName);
+                throw new RuntimeException("LOCK_FAILED");
             }
 
             return lock;
@@ -45,10 +43,7 @@ public class LockService {
             // Restore interrupted thread status
             Thread.currentThread().interrupt();
 
-            throw new RuntimeException(
-                    "Thread interrupted while acquiring lock: "
-                            + lockName,
-                    exception);
+            throw new RuntimeException("THREAD_INTERRUPTED");
         }
     }
 

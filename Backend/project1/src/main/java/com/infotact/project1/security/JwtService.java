@@ -63,6 +63,8 @@ public class JwtService {
 
         claims.put("lastName", user.getLastName());
 
+        claims.put("phone", user.getPhone());
+
         return Jwts.builder()
 
                 .claims(claims)
