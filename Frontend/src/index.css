@@ -1,0 +1,60 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #B6B0A4;
+  --color-primary-strong: #FFFFFF;
+  --color-secondary: #000000;
+  --color-tertiary: #1FAFC7;
+  --color-neutral: #0E0E0E;
+  --color-surface: #F4F1EC;
+  --color-surface-strong: #FFFFFF;
+  --color-on-surface: #000000;
+  --color-on-inverse: #FFFFFF;
+  --color-border-soft: #2A2A2A;
+  --color-muted: #8B857B;
+  --color-accent: #1FAFC7;
+  --color-error: #D95C5C;
+
+  --font-serif: "Instrument Serif", serif;
+  --font-mono: "DM Mono", monospace;
+
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+}
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  body {
+    margin: 0;
+    font-family: var(--font-mono);
+    background-color: var(--color-surface);
+    color: var(--color-on-surface);
+  }
+
+  h1, h2, h3, h4 {
+    font-family: var(--font-serif);
+    font-weight: 400;
+    letter-spacing: -0.02em;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply h-[50px] bg-primary text-secondary px-4 py-3 rounded-md text-sm font-medium transition-opacity hover:opacity-90 disabled:opacity-50;
+  }
+
+  .btn-secondary {
+    @apply h-[50px] bg-neutral text-on-inverse px-4 py-3 rounded-sm text-sm font-medium transition-opacity hover:opacity-90 disabled:opacity-50;
+  }
+
+  .card-enterprise {
+    @apply bg-surface-strong border border-slate-200 rounded-lg p-4 shadow-sm;
+  }
+
+  .input-enterprise {
+    @apply w-full bg-surface-strong text-on-surface border border-slate-300 rounded-sm px-3 py-2 text-sm outline-none focus:border-accent transition-colors;
+  }
+}
