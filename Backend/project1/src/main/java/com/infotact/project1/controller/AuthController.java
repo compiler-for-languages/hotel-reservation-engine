@@ -31,4 +31,10 @@ public class AuthController {
 
         return authService.login(requestDTO);
     }
+
+    @GetMapping("/me")
+    public UserResponseDTO getCurrentUser() {
+
+        return authService.getCurrentUser();
+    }
 }

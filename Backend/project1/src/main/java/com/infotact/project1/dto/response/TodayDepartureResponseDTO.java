@@ -23,6 +23,10 @@ public class TodayDepartureResponseDTO {
 
     private String roomType;
 
+    private Integer guestCount;
+
+    private String guestNames;
+
     private LocalDate checkOutDate;
 
     private LocalDateTime actualCheckIn;
