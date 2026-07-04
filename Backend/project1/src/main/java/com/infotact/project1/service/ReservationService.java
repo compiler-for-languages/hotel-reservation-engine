@@ -75,15 +75,7 @@ public class ReservationService {
                 throw BusinessExceptions.roomUnavailable(roomType.getName());
             }
 
-            // Create booking hold FIRST to temporarily reserve inventory
-            BookingHoldRequestDTO holdRequest = new BookingHoldRequestDTO();
-            holdRequest.setReservationId(0L); // Temporary ID, will be updated after reservation save
-            holdRequest.setUserId(user.getUserId());
-            holdRequest.setRoomTypeId(roomType.getRoomTypeId());
-            holdRequest.setCheckInDate(requestDTO.getCheckInDate());
-            holdRequest.setCheckOutDate(requestDTO.getCheckOutDate());
 
-            bookingHoldService.createHold(holdRequest);
 
             Reservation reservation = new Reservation();
             reservation.setUser(user);
@@ -95,6 +87,16 @@ public class ReservationService {
             reservation.setReservationStatus(ReservationStatus.PENDING);
 
             Reservation savedReservation = reservationRepository.save(reservation);
+
+            // Create booking hold FIRST to temporarily reserve inventory
+            BookingHoldRequestDTO holdRequest = new BookingHoldRequestDTO();
+            holdRequest.setReservationId(reservation.getReservationId()); // Temporary ID, will be updated after reservation save
+            holdRequest.setUserId(user.getUserId());
+            holdRequest.setRoomTypeId(roomType.getRoomTypeId());
+            holdRequest.setCheckInDate(requestDTO.getCheckInDate());
+            holdRequest.setCheckOutDate(requestDTO.getCheckOutDate());
+
+            bookingHoldService.createHold(holdRequest);
 
             // Mark hold as CONVERTED to prevent double counting
 //            bookingHoldService.convertHoldToReservation(user.getUserId(), savedReservation.getReservationId());
