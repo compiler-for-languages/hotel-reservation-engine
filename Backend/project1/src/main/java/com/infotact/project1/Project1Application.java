@@ -2,6 +2,7 @@ package com.infotact.project1;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.data.redis.repository.configuration.EnableRedisRepositories;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 
@@ -20,6 +21,8 @@ Responsibilities:
  */
 @SpringBootApplication
 @EnableScheduling
+@EnableRedisRepositories(
+		basePackages = "com.infotact.project1.repository")
 public class Project1Application {
 
 	/*

@@ -91,7 +91,9 @@ public interface ReservationRepository
             WHERE r.roomType.roomTypeId = :roomTypeId
             AND r.reservationStatus NOT IN (
                     com.infotact.project1.enums.ReservationStatus.CANCELLED,
-                    com.infotact.project1.enums.ReservationStatus.EXPIRED
+                    com.infotact.project1.enums.ReservationStatus.EXPIRED,
+                  com.infotact.project1.enums.ReservationStatus.PENDING,
+                              com.infotact.project1.enums.ReservationStatus.CHECKED_OUT              
             )
             AND r.checkInDate < :checkOutDate
             AND r.checkOutDate > :checkInDate

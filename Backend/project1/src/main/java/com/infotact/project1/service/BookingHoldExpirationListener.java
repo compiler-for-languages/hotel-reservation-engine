@@ -11,7 +11,7 @@ import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 import org.springframework.stereotype.Service;
 
 @Service
-@Profile("!test")
+//@Profile("!test")
 @Slf4j
 public class BookingHoldExpirationListener
         extends KeyExpirationEventMessageListener {
@@ -25,6 +25,8 @@ public class BookingHoldExpirationListener
         super(listenerContainer);
 
         this.reservationRepository = reservationRepository;
+
+        System.out.println("======================================================================BookingHoldExpirationListener Loaded====================================================================");
     }
 
     @Override
@@ -32,47 +34,63 @@ public class BookingHoldExpirationListener
             Message message,
             byte[] pattern) {
 
-        // Expired Redis key (Reservation Id)
-        String expiredKey =
-                message.toString();
+        System.out.println("================================================");
+        System.out.println("Redis Expiration Event Received");
+        System.out.println("Key : " + message.toString());
+        System.out.println("================================================");
 
-        System.out.println(expiredKey);
+        // Expired Redis key
+        String expiredKey = message.toString();
 
         try {
 
-            // Reservation id is used as the Redis key
+            // Expected format: bookingHold:51
+            if (!expiredKey.startsWith("bookingHold:")) {
+                return;
+            }
+
+            // Extract reservation id (long)
+            String reservationIdString =
+                    expiredKey.substring("bookingHold:".length());
+
             Long reservationId =
-                    Long.parseLong(expiredKey);
+                    Long.parseLong(reservationIdString);
+
+            System.out.println("Reservation Id : " + reservationId);
 
             Reservation reservation =
-                    reservationRepository.findById(
-                                    reservationId)
+                    reservationRepository.findById(reservationId)
                             .orElseThrow(() ->
                                     new RuntimeException(
                                             "Reservation not found with id: "
                                                     + reservationId));
 
-            // Expire only reservations waiting for payment
+            // Expire only pending reservations
             if (reservation.getReservationStatus()
                     == ReservationStatus.PENDING) {
 
                 reservation.setReservationStatus(
                         ReservationStatus.EXPIRED);
 
-                reservationRepository.save(
-                        reservation);
+                reservationRepository.save(reservation);
+
+                System.out.println(
+                        "Reservation " + reservationId + " marked as EXPIRED.");
 
                 log.info(
                         "Reservation {} expired after booking hold timeout.",
                         reservationId);
             }
 
-        } catch (NumberFormatException exception) {
+        } catch (Exception exception) {
 
-            // Ignore Redis keys that are not reservation ids
-            log.debug(
-                    "Ignoring expired Redis key: {}",
-                    expiredKey);
+            exception.printStackTrace();
+
+            log.error(
+                    "Failed to process Redis expiration event for key: {}",
+                    expiredKey,
+                    exception);
         }
     }
+
 }
