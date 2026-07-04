@@ -136,20 +136,20 @@ public class BookingHoldService {
                 reservationId.toString());
     }
 
-    // Convert hold to reservation - mark as CONVERTED to prevent double counting
-    public void convertHoldToReservation(Long userId, Long reservationId) {
-        // Find the active hold for this user and update it
-        Iterable<BookingHold> allHolds = bookingHoldRepository.findAll();
-        for (BookingHold hold : allHolds) {
-            if (hold.getUserId().equals(userId) && hold.getStatus() == BookingHoldStatus.ACTIVE) {
-                hold.setHoldId(reservationId.toString()); // Update holdId to match reservationId for proper deletion
-                hold.setReservationId(reservationId);
-                hold.setStatus(BookingHoldStatus.CONVERTED);
-                bookingHoldRepository.save(hold);
-                break;
-            }
-        }
-    }
+//    // Convert hold to reservation - mark as CONVERTED to prevent double counting
+//    public void convertHoldToReservation(Long userId, Long reservationId) {
+//        // Find the active hold for this user and update it
+//        Iterable<BookingHold> allHolds = bookingHoldRepository.findAll();
+//        for (BookingHold hold : allHolds) {
+//            if (hold.getUserId().equals(userId) && hold.getStatus() == BookingHoldStatus.ACTIVE) {
+//                hold.setHoldId(reservationId.toString()); // Update holdId to match reservationId for proper deletion
+//                hold.setReservationId(reservationId);
+//                hold.setStatus(BookingHoldStatus.CONVERTED);
+//                bookingHoldRepository.save(hold);
+//                break;
+//            }
+//        }
+//    }
 
     // Entity → DTO mapper
     private BookingHoldResponseDTO mapToResponse(

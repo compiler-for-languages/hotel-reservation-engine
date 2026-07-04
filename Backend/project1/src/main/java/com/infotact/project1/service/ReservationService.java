@@ -97,7 +97,7 @@ public class ReservationService {
             Reservation savedReservation = reservationRepository.save(reservation);
 
             // Mark hold as CONVERTED to prevent double counting
-            bookingHoldService.convertHoldToReservation(user.getUserId(), savedReservation.getReservationId());
+//            bookingHoldService.convertHoldToReservation(user.getUserId(), savedReservation.getReservationId());
 
             PaymentRequestDTO paymentRequest = new PaymentRequestDTO();
             paymentRequest.setReservationId(savedReservation.getReservationId());
