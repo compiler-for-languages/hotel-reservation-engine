@@ -22,7 +22,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 
 // Stored in Redis for 5 minutes
-@RedisHash(value = "bookingHold", timeToLive = 300)
+@RedisHash(value = "bookingHold", timeToLive = 60)
 public class BookingHold {
     @Id
     private String holdId;

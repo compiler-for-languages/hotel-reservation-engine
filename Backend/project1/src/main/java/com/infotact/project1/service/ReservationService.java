@@ -100,13 +100,13 @@ public class ReservationService {
 
             // Mark hold as CONVERTED to prevent double counting
 //            bookingHoldService.convertHoldToReservation(user.getUserId(), savedReservation.getReservationId());
-
+   System.out.println("==========================See before payment");
             PaymentRequestDTO paymentRequest = new PaymentRequestDTO();
             paymentRequest.setReservationId(savedReservation.getReservationId());
             paymentRequest.setPaymentMethod(requestDTO.getPaymentMethod());
 
             paymentService.createPayment(paymentRequest);
-
+System.out.println("============================================See after payment");
             return mapToResponse(savedReservation);
         } catch (Exception exception) {
             // If reservation was created but hold conversion failed, release the hold
