@@ -30,14 +30,6 @@ const pageMeta: Record<string, { title: string; description: string }> = {
     title: "Today's Departures",
     description: "This section will consume /api/reception/today-departures in Module 2.",
   },
-  "/receptionist/current-guests": {
-    title: "Current Guests",
-    description: "Live in-house guest list from /api/reception/current-guests will be wired in Module 2.",
-  },
-  "/receptionist/walk-in-customer": {
-    title: "Walk-in Customer",
-    description: "Walk-in customer registration using /api/reception/customer will be added in Module 2.",
-  },
   "/receptionist/assign-room": {
     title: "Assign Room",
     description: "Room assignment flow using /api/reception/assign-room will be added in Module 2.",

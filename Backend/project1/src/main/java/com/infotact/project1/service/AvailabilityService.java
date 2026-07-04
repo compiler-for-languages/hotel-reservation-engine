@@ -9,6 +9,7 @@ import com.infotact.project1.repository.BookingHoldRepository;
 import com.infotact.project1.repository.ReservationRepository;
 import com.infotact.project1.repository.RoomRepository;
 import com.infotact.project1.repository.RoomTypeRepository;
+import com.infotact.project1.exception.BusinessExceptions;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -40,13 +41,12 @@ public class AvailabilityService {
                 roomTypeRepository.findById(
                                 requestDTO.getRoomTypeId())
                         .orElseThrow(() ->
-                                new RuntimeException("ROOM_TYPE_NOT_FOUND"));
+                                BusinessExceptions.roomTypeNotFound(requestDTO.getRoomTypeId()));
 
-        // Validate reservation dates
         if (!requestDTO.getCheckInDate()
                 .isBefore(requestDTO.getCheckOutDate())) {
 
-            throw new RuntimeException("INVALID_DATE_RANGE");
+            throw BusinessExceptions.invalidCheckInDateRange();
         }
 
         // Total inventory available for this room type
@@ -62,15 +62,22 @@ public class AvailabilityService {
                                 requestDTO.getCheckOutDate());
 
         // Count active booking holds overlapping requested dates
+        // Only ACTIVE holds are counted - CONVERTED, EXPIRED, CANCELLED are excluded
         long activeHolds = StreamSupport.stream(
                         bookingHoldRepository.findAll().spliterator(), false)
                 .filter(Objects::nonNull)
                 .filter(hold -> hold.getRoomTypeId().equals(roomType.getRoomTypeId()))
-                .filter(hold -> hold.getStatus() == BookingHoldStatus.ACTIVE)
+                .filter(hold -> hold.getStatus() == BookingHoldStatus.ACTIVE) // Only ACTIVE holds count
                 .filter(hold ->
                         hold.getCheckInDate().isBefore(requestDTO.getCheckOutDate()) &&
                                 hold.getCheckOutDate().isAfter(requestDTO.getCheckInDate()))
                 .count();
+        System.out.println("\n========== AVAILABILITY ==========");
+        System.out.println("Room Type ID   : " + roomType.getRoomTypeId());
+        System.out.println("Total Rooms    : " + totalRooms);
+        System.out.println("Booked Rooms   : " + bookedRooms);
+        System.out.println("Active Holds   : " + activeHolds);
+        System.out.println("==================================\n");
 
         return mapToResponse(
                 roomType,
@@ -114,7 +121,7 @@ public class AvailabilityService {
         String message;
         RoomType roomType =
                 roomTypeRepository.findById(response.getRoomTypeId()).orElseThrow(() ->
-                new RuntimeException("ROOM_TYPE_NOT_FOUND"));
+                BusinessExceptions.roomTypeNotFound(response.getRoomTypeId()));
 
         if (!response.isAvailable()) {
 

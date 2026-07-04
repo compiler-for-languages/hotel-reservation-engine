@@ -28,5 +28,7 @@ public class PaymentResponseDTO {
 
     private String gatewayPaymentId;
 
+    private String gatewaySignature;
+
     private LocalDateTime paidAt;
 }

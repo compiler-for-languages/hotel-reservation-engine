@@ -1,5 +1,5 @@
 import { apiClient } from "@/services/apiClient";
-import type { LoginRequestDTO, LoginResponseDTO, RegisterRequestDTO, UserResponseDTO } from "@/types/api";
+import type { LoginRequestDTO, LoginResponseDTO, ProfilePatchRequestDTO, RegisterRequestDTO, UserResponseDTO } from "@/types/api";
 
 export const AuthService = {
   registerCustomer: async (payload: RegisterRequestDTO): Promise<UserResponseDTO> => {
@@ -14,6 +14,11 @@ export const AuthService = {
 
   getCurrentUser: async (): Promise<UserResponseDTO> => {
     const { data } = await apiClient.get<UserResponseDTO>("/api/auth/me");
+    return data;
+  },
+
+  updateProfile: async (payload: ProfilePatchRequestDTO): Promise<UserResponseDTO> => {
+    const { data } = await apiClient.patch<UserResponseDTO>("/api/auth/profile", payload);
     return data;
   },
 };

@@ -122,12 +122,13 @@ export interface PaymentRequestDTO {
 export interface PaymentResponseDTO {
   paymentId: number;
   reservationId: number;
-  amount: number;
+  amount: number | string;
   currency: string;
   paymentMethod: PaymentMethod;
   paymentStatus: PaymentStatus;
   gatewayOrderId: string;
   gatewayPaymentId: string;
+  gatewaySignature: string;
   paidAt: string;
 }
 
@@ -199,6 +200,12 @@ export interface UserPatchRequestDTO {
   lastName: string;
   phone: string;
   accountStatus: AccountStatus;
+}
+
+export interface ProfilePatchRequestDTO {
+  firstName: string;
+  lastName: string;
+  phone: string;
 }
 
 export interface RoomPatchRequestDTO {

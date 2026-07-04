@@ -1,21 +1,13 @@
 import { apiClient } from "@/services/apiClient";
 import type {
   AssignRoomRequestDTO,
-  CurrentGuestResponseDTO,
   ReceptionDashboardResponseDTO,
   RoomAssignmentResponseDTO,
   TodayArrivalResponseDTO,
   TodayDepartureResponseDTO,
-  UserRequestDTO,
-  UserResponseDTO,
 } from "@/types/api";
 
 export const ReceptionService = {
-  createWalkInCustomer: async (payload: UserRequestDTO): Promise<UserResponseDTO> => {
-    const { data } = await apiClient.post<UserResponseDTO>("/api/reception/customer", payload);
-    return data;
-  },
-
   assignRoom: async (payload: AssignRoomRequestDTO): Promise<RoomAssignmentResponseDTO> => {
     const { data } = await apiClient.post<RoomAssignmentResponseDTO>("/api/reception/assign-room", payload);
     return data;
@@ -43,11 +35,6 @@ export const ReceptionService = {
 
   getDashboard: async (): Promise<ReceptionDashboardResponseDTO> => {
     const { data } = await apiClient.get<ReceptionDashboardResponseDTO>("/api/reception/dashboard");
-    return data;
-  },
-
-  getCurrentGuests: async (): Promise<CurrentGuestResponseDTO[]> => {
-    const { data } = await apiClient.get<CurrentGuestResponseDTO[]>("/api/reception/current-guests");
     return data;
   },
 };

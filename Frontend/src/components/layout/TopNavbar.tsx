@@ -13,27 +13,29 @@ export const TopNavbar = () => {
   };
 
   return (
-    <header className="fixed top-0 right-0 left-0 z-30 border-b border-slate-200 bg-white">
+    <header className="fixed top-0 right-0 left-0 z-30 glass-effect border-b border-slate-200/50">
       <div className="flex h-16 items-center justify-between px-4 md:px-6">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-md bg-slate-900 text-sm font-semibold text-white">H</div>
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl gradient-primary text-white font-bold text-lg shadow-lg">
+            H
+          </div>
           <div>
-            <p className="text-xs text-slate-500">Application</p>
-            <h1 className="text-sm font-semibold text-slate-900 md:text-base">Hotel Reservation Engine</h1>
+            <p className="text-xs text-slate-500 font-medium">Welcome</p>
+            <h1 className="text-sm font-semibold text-slate-900 md:text-base tracking-tight">Hotel Reservation Engine</h1>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
           <div className="hidden text-right sm:block">
-            <p className="text-sm font-medium text-slate-900">{user ? `${user.firstName} ${user.lastName}` : "-"}</p>
+            <p className="text-sm font-semibold text-slate-900">{user ? `${user.firstName} ${user.lastName}` : "-"}</p>
             <p className="text-xs text-slate-500">{user?.email ?? ""}</p>
           </div>
 
-          <span className="rounded-full border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700">
+          <span className="hidden sm:inline-flex rounded-full bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 px-3 py-1 text-xs font-semibold text-indigo-700">
             {user ? roleLabel[user.role] : "-"}
           </span>
 
-          <div className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-300 bg-slate-50 text-xs font-semibold text-slate-700">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-semibold shadow-md">
             {user ? `${user.firstName[0] ?? ""}${user.lastName[0] ?? ""}` : "NA"}
           </div>
 
@@ -41,7 +43,7 @@ export const TopNavbar = () => {
             type="button"
             onClick={handleLogout}
             aria-label="Logout"
-            className="rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
+            className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-all hover:bg-slate-50 hover:border-slate-300 hover:shadow-sm"
           >
             Logout
           </button>

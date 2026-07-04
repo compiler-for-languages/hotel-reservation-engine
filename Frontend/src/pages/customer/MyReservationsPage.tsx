@@ -28,6 +28,7 @@ export default function MyReservationsPage() {
     queryKey: ["myReservations", user?.userId],
     queryFn: () => ReservationService.getReservationsByUser(user!.userId),
     enabled: Boolean(user?.userId),
+    refetchInterval: 30000, // Refetch every 30 seconds to catch status changes (PENDING -> EXPIRED)
   });
 
   const reservationDetailMutation = useMutation({
@@ -95,7 +96,7 @@ export default function MyReservationsPage() {
                 >
                   View
                 </button>
-                <button type="button" className={tableDangerButtonClass} onClick={() => setDeletingReservationId(row.reservationId)}>
+                <button type="button" className={tableDangerButtonClass} onClick={() => setDeletingReservationId(row.reservationId)} disabled={!["PENDING", "EXPIRED"].includes(row.reservationStatus)}>
                   Cancel
                 </button>
               </div>

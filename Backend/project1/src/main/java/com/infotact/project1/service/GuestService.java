@@ -4,6 +4,7 @@ import com.infotact.project1.dto.request.GuestPatchRequestDTO;
 import com.infotact.project1.dto.request.GuestRequestDTO;
 import com.infotact.project1.dto.response.GuestResponseDTO;
 import com.infotact.project1.enums.Role;
+import com.infotact.project1.exception.BusinessExceptions;
 import com.infotact.project1.model.Guest;
 import com.infotact.project1.enums.ReservationStatus;
 import com.infotact.project1.model.Reservation;
@@ -12,51 +13,37 @@ import com.infotact.project1.repository.GuestRepository;
 import com.infotact.project1.repository.ReservationRepository;
 import com.infotact.project1.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
-
-// Lombok generates constructor for final fields
 @RequiredArgsConstructor
 public class GuestService {
 
-    // Dependency remains immutable after injection
     private final GuestRepository guestRepository;
-
-    // Dependency remains immutable after injection
     private final ReservationRepository reservationRepository;
-
     private final UserRepository userRepository;
 
-    public GuestResponseDTO createGuest(
-            GuestRequestDTO requestDTO) {
+    public GuestResponseDTO createGuest(GuestRequestDTO requestDTO) {
 
-        // Fetch reservation before creating guest
-        Reservation reservation =
-                reservationRepository.findById(
-                                requestDTO.getReservationId())
-                        .orElseThrow(() ->
-                                new RuntimeException("RESERVATION_NOT_FOUND"));
+        Reservation reservation = reservationRepository.findById(requestDTO.getReservationId())
+                .orElseThrow(() -> BusinessExceptions.reservationNotFound(requestDTO.getReservationId()));
 
         if (reservation.getReservationStatus() == ReservationStatus.CHECKED_OUT) {
-            throw new RuntimeException("RESERVATION_ALREADY_CHECKED_OUT");
+            throw BusinessExceptions.reservationAlreadyCheckedOut();
         }
         authorizeGuestAccess(reservation);
 
-        long enteredGuests =
-                guestRepository.countByReservation(reservation);
+        long enteredGuests = guestRepository.countByReservation(reservation);
 
         if (enteredGuests >= reservation.getGuestCount()) {
-
-            throw new RuntimeException("GUEST_LIMIT_REACHED");
+            throw BusinessExceptions.guestLimitReached();
         }
 
         Guest guest = new Guest();
-
         guest.setReservation(reservation);
         guest.setFirstName(requestDTO.getFirstName());
         guest.setLastName(requestDTO.getLastName());
@@ -73,8 +60,6 @@ public class GuestService {
     }
 
     public List<GuestResponseDTO> getAllGuests() {
-
-        // Stream API for DTO conversion
         return guestRepository.findAll()
                 .stream()
                 .map(this::mapToResponse)
@@ -82,41 +67,31 @@ public class GuestService {
     }
 
     public GuestResponseDTO getGuestById(Long guestId) {
-
         Guest guest = guestRepository.findById(guestId)
-                .orElseThrow(() ->
-                        new RuntimeException("GUEST_NOT_FOUND"));
-
+                .orElseThrow(() -> BusinessExceptions.guestNotFound(guestId));
         return mapToResponse(guest);
     }
 
-    // Retrieve guests belonging to a reservation
-    public List<GuestResponseDTO> getGuestsByReservation(
-            Long reservationId) {
+    public List<GuestResponseDTO> getGuestsByReservation(Long reservationId) {
 
         Reservation reservation = reservationRepository.findById(reservationId)
-                .orElseThrow(() -> new RuntimeException("RESERVATION_NOT_FOUND"));
+                .orElseThrow(BusinessExceptions::reservationNotFound);
 
         authorizeGuestAccess(reservation);
 
-        List<Guest> guests = guestRepository.findByReservation(reservation);
-
-        return guests.stream()
+        return guestRepository.findByReservation(reservation)
+                .stream()
                 .map(this::mapToResponse)
                 .toList();
     }
 
-    // Partial guest update
-    public GuestResponseDTO updateGuest(
-            Long guestId,
-            GuestPatchRequestDTO requestDTO) {
+    public GuestResponseDTO updateGuest(Long guestId, GuestPatchRequestDTO requestDTO) {
 
         Guest guest = guestRepository.findById(guestId)
-                .orElseThrow(() ->
-                        new RuntimeException("GUEST_NOT_FOUND"));
+                .orElseThrow(() -> BusinessExceptions.guestNotFound(guestId));
 
         if (guest.getReservation().getReservationStatus() == ReservationStatus.CHECKED_OUT) {
-            throw new RuntimeException("RESERVATION_ALREADY_CHECKED_OUT");
+            throw BusinessExceptions.reservationAlreadyCheckedOut();
         }
 
         authorizeGuestAccess(guest.getReservation());
@@ -149,43 +124,36 @@ public class GuestService {
     public void deleteGuest(Long guestId) {
 
         Guest guest = guestRepository.findById(guestId)
-                .orElseThrow(() ->
-                        new RuntimeException("GUEST_NOT_FOUND"));
+                .orElseThrow(() -> BusinessExceptions.guestNotFound(guestId));
 
-        if (guest.getReservation().getReservationStatus() == ReservationStatus.CHECKED_OUT) {
-            throw new RuntimeException("RESERVATION_ALREADY_CHECKED_OUT");
+        if (guest.getReservation() != null
+                && guest.getReservation().getReservationStatus() == ReservationStatus.CHECKED_OUT) {
+            throw BusinessExceptions.reservationAlreadyCheckedOut();
         }
 
-        authorizeGuestAccess(guest.getReservation());
+        if (guest.getReservation() != null) {
+            authorizeGuestAccess(guest.getReservation());
+        }
 
         guestRepository.delete(guest);
     }
 
     public void validateGuestDetailsCompleted(Long reservationId) {
 
-        Reservation reservation =
-                reservationRepository.findById(reservationId)
-                        .orElseThrow(() ->
-                                new RuntimeException("RESERVATION_NOT_FOUND"));
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> BusinessExceptions.reservationNotFound(reservationId));
 
-        long enteredGuests =
-                guestRepository.countByReservation(reservation);
+        long enteredGuests = guestRepository.countByReservation(reservation);
 
         if (enteredGuests != reservation.getGuestCount()) {
-
-            throw new RuntimeException("GUEST_DETAILS_INCOMPLETE");
+            throw BusinessExceptions.guestDetailsIncomplete();
         }
     }
 
-    // Entity → DTO mapper
-    private GuestResponseDTO mapToResponse(
-            Guest guest) {
-
-        // Builder pattern improves object creation readability
+    private GuestResponseDTO mapToResponse(Guest guest) {
         return GuestResponseDTO.builder()
                 .guestId(guest.getGuestId())
-                .reservationId(
-                        guest.getReservation().getReservationId())
+                .reservationId(guest.getReservation().getReservationId())
                 .firstName(guest.getFirstName())
                 .lastName(guest.getLastName())
                 .phone(guest.getPhone())
@@ -200,12 +168,11 @@ public class GuestService {
                 SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication == null || !authentication.isAuthenticated()) {
-            throw new RuntimeException("AUTHENTICATION_REQUIRED");
+            return;
         }
 
         User currentUser = userRepository.findByEmail(authentication.getName())
-                .orElseThrow(() ->
-                        new RuntimeException("USER_NOT_FOUND"));
+                .orElseThrow(BusinessExceptions::userNotFound);
 
         Role role = currentUser.getRole();
 
@@ -215,11 +182,11 @@ public class GuestService {
 
         if (role == Role.CUSTOMER) {
             if (!reservation.getUser().getUserId().equals(currentUser.getUserId())) {
-                throw new RuntimeException("ACCESS_DENIED");
+                throw BusinessExceptions.accessDenied();
             }
             return;
         }
 
-        throw new RuntimeException("ACCESS_DENIED");
+        throw BusinessExceptions.accessDenied();
     }
 }

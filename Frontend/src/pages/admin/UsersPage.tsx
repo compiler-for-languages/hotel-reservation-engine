@@ -132,7 +132,7 @@ export default function UsersPage() {
             value={lookupUserId}
             onChange={(event) => setLookupUserId(event.target.value)}
             type="number"
-            placeholder="Enter user ID"
+            placeholder="Enter numeric user ID (e.g. 5)"
             className="rounded-md border border-slate-300 px-3 py-2 text-sm"
           />
           <button
@@ -245,19 +245,19 @@ export default function UsersPage() {
       <Modal open={Boolean(editingUser)} title="Edit User" onClose={() => setEditingUser(null)}>
         <form className="grid gap-3 md:grid-cols-2" onSubmit={editForm.handleSubmit((values) => editMutation.mutate(values))}>
           <div>
-            <input className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" placeholder="First Name" {...editForm.register("firstName")} />
+            <input className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" placeholder="User first name" {...editForm.register("firstName")} />
             <FormErrorText message={editForm.formState.errors.firstName?.message} />
           </div>
           <div>
-            <input className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" placeholder="Last Name" {...editForm.register("lastName")} />
+            <input className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" placeholder="User last name" {...editForm.register("lastName")} />
             <FormErrorText message={editForm.formState.errors.lastName?.message} />
           </div>
           <div className="md:col-span-2">
-            <input className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" placeholder="Phone" {...editForm.register("phone")} />
+            <input className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" placeholder="10-digit mobile number" {...editForm.register("phone")} />
             <FormErrorText message={editForm.formState.errors.phone?.message} />
           </div>
           <div className="md:col-span-2">
-            <select className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" {...editForm.register("accountStatus")}>
+            <select className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" title="ACTIVE allows login, INACTIVE blocks access" {...editForm.register("accountStatus")}>
               <option value="ACTIVE">ACTIVE</option>
               <option value="INACTIVE">INACTIVE</option>
             </select>

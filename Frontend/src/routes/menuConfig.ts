@@ -18,8 +18,6 @@ export const menuByRole: Record<Role, MenuItem[]> = {
     { label: "Dashboard", path: "/receptionist/dashboard" },
     { label: "Today's Arrivals", path: "/receptionist/today-arrivals" },
     { label: "Today's Departures", path: "/receptionist/today-departures" },
-    { label: "Current Guests", path: "/receptionist/current-guests" },
-
     { label: "Assign Room", path: "/receptionist/assign-room" },
     { label: "Check In", path: "/receptionist/check-in" },
     { label: "Check Out", path: "/receptionist/check-out" },

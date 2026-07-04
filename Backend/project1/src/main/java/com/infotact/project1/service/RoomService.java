@@ -4,6 +4,7 @@ import com.infotact.project1.dto.request.RoomPatchRequestDTO;
 import com.infotact.project1.dto.request.RoomRequestDTO;
 import com.infotact.project1.dto.response.RoomResponseDTO;
 import com.infotact.project1.enums.RoomStatus;
+import com.infotact.project1.exception.BusinessExceptions;
 import com.infotact.project1.model.Room;
 import com.infotact.project1.model.RoomType;
 import com.infotact.project1.repository.RoomRepository;
@@ -14,32 +15,23 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 @Service
-
-// Lombok generates constructor for final fields
 @RequiredArgsConstructor
 public class RoomService {
 
-    // Dependency remains immutable after injection
     private final RoomRepository roomRepository;
-
-    // Dependency remains immutable after injection
     private final RoomTypeRepository roomTypeRepository;
 
     public RoomResponseDTO createRoom(RoomRequestDTO requestDTO) {
 
-        // Fetch referenced room type before creating room
         RoomType roomType = roomTypeRepository.findById(requestDTO.getRoomTypeId())
-                .orElseThrow(() ->
-                        new RuntimeException("ROOM_TYPE_NOT_FOUND"));
+                .orElseThrow(() -> BusinessExceptions.roomTypeNotFound(requestDTO.getRoomTypeId()));
 
-        // Prevent duplicate room numbers
         roomRepository.findByRoomNumber(requestDTO.getRoomNumber().trim())
                 .ifPresent(room -> {
-                    throw new RuntimeException("ROOM_NUMBER_EXISTS");
+                    throw BusinessExceptions.roomNumberExists(requestDTO.getRoomNumber().trim());
                 });
 
         Room room = new Room();
-
         room.setRoomNumber(requestDTO.getRoomNumber().trim());
         room.setFloorNumber(requestDTO.getFloorNumber());
         room.setRoomStatus(requestDTO.getRoomStatus());
@@ -51,105 +43,65 @@ public class RoomService {
     }
 
     public List<RoomResponseDTO> getAllRooms() {
-
-        // Stream API for DTO conversion
         return roomRepository.findAll()
                 .stream()
-
-                // Method reference improves readability
                 .map(this::mapToResponse)
                 .toList();
     }
 
     public RoomResponseDTO getRoomById(Long roomId) {
-
         Room room = roomRepository.findById(roomId)
-                .orElseThrow(() ->
-                        new RuntimeException("ROOM_NOT_FOUND"));
-
+                .orElseThrow(() -> BusinessExceptions.roomNotFound(roomId));
         return mapToResponse(room);
     }
 
-    // Retrieve room using room number
-    // Custom repository method
     public RoomResponseDTO getRoomByRoomNumber(String roomNumber) {
-
         Room room = roomRepository.findByRoomNumber(roomNumber)
-                .orElseThrow(() ->
-                        new RuntimeException("ROOM_NOT_FOUND"));
-
+                .orElseThrow(() -> BusinessExceptions.roomNotFoundByNumber(roomNumber));
         return mapToResponse(room);
     }
 
-    // Retrieve all rooms under a specific room type
-    // Custom repository method
     public List<RoomResponseDTO> getRoomsByRoomType(Long roomTypeId) {
-
         RoomType roomType = roomTypeRepository.findById(roomTypeId)
-                .orElseThrow(() ->
-                        new RuntimeException("ROOM_TYPE_NOT_FOUND"));
+                .orElseThrow(() -> BusinessExceptions.roomTypeNotFound(roomTypeId));
 
-        // Stream API for DTO conversion
         return roomRepository.findByRoomType(roomType)
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
     }
 
-    //filter based on particular room type and particular room status
     public List<RoomResponseDTO> getRoomsByRoomTypeAndStatus(
             Long roomTypeId,
             RoomStatus roomStatus) {
 
         RoomType roomType = roomTypeRepository.findById(roomTypeId)
+                .orElseThrow(BusinessExceptions::roomTypeNotFoundForFilter);
 
-                // Prevents querying with invalid room type
-                .orElseThrow(() ->
-                        new RuntimeException("ROOM_TYPE_NOT_FOUND"));
-
-        // Stream API for DTO conversion
-        return roomRepository.findByRoomTypeAndRoomStatus(
-                        roomType,
-                        roomStatus)
+        return roomRepository.findByRoomTypeAndRoomStatus(roomType, roomStatus)
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
     }
 
-
     public void deleteRoom(Long roomId) {
-
         Room room = roomRepository.findById(roomId)
-                .orElseThrow(() ->
-                        new RuntimeException("ROOM_NOT_FOUND"));
-
+                .orElseThrow(() -> BusinessExceptions.roomNotFound(roomId));
         roomRepository.delete(room);
     }
 
-    // Partial room update
-    public RoomResponseDTO updateRoom(
-            Long roomId,
-            RoomPatchRequestDTO requestDTO) {
+    public RoomResponseDTO updateRoom(Long roomId, RoomPatchRequestDTO requestDTO) {
 
         Room room = roomRepository.findById(roomId)
-
-                // Prevents updates on non-existent records
-                .orElseThrow(() ->
-                        new RuntimeException("ROOM_NOT_FOUND"));
+                .orElseThrow(() -> BusinessExceptions.roomNotFound(roomId));
 
         if (requestDTO.getRoomNumber() != null) {
-
-            // Prevent duplicate room numbers during update
             roomRepository.findByRoomNumber(requestDTO.getRoomNumber().trim())
                     .ifPresent(existingRoom -> {
-
-                        if (!existingRoom.getRoomId()
-                                .equals(room.getRoomId())) {
-
-                            throw new RuntimeException("ROOM_NUMBER_EXISTS");
+                        if (!existingRoom.getRoomId().equals(room.getRoomId())) {
+                            throw BusinessExceptions.roomNumberExists(requestDTO.getRoomNumber().trim());
                         }
                     });
-
             room.setRoomNumber(requestDTO.getRoomNumber().trim());
         }
 
@@ -162,10 +114,7 @@ public class RoomService {
         return mapToResponse(updatedRoom);
     }
 
-    // Entity → DTO mapper
     private RoomResponseDTO mapToResponse(Room room) {
-
-        // Builder pattern improves object creation readability
         return RoomResponseDTO.builder()
                 .roomId(room.getRoomId())
                 .roomNumber(room.getRoomNumber())

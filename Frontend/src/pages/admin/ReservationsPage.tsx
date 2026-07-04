@@ -9,14 +9,11 @@ import { ReservationService } from "@/services/ReservationService";
 import type { ReservationStatus } from "@/types/api";
 import { formatDate, formatGuestNames } from "@/utils/format";
 import { getApiErrorMessage } from "@/utils/http";
-import { primaryButtonClass, secondaryButtonClass, tableActionButtonClass, tableDangerButtonClass } from "@/utils/ui";
-
-const statusCycle: ReservationStatus[] = ["PENDING", "CONFIRMED", "CHECKED_IN", "CHECKED_OUT", "CANCELLED", "EXPIRED"];
+import { primaryButtonClass, secondaryButtonClass, tableDangerButtonClass } from "@/utils/ui";
 
 export default function ReservationsPage() {
   const queryClient = useQueryClient();
-  const [pendingStatusReservationId, setPendingStatusReservationId] = useState<number | null>(null);
-  const [deletingReservationId, setDeletingReservationId] = useState<number | null>(null);
+  const [pendingCancelReservationId, setPendingCancelReservationId] = useState<number | null>(null);
   const [lookupReservationId, setLookupReservationId] = useState("");
   const [statusFilter, setStatusFilter] = useState<ReservationStatus>("PENDING");
 
@@ -30,28 +27,25 @@ export default function ReservationsPage() {
     queryFn: ReservationService.getAllReservations,
   });
 
-  const updateMutation = useMutation({
+  const cancelMutation = useMutation({
     mutationFn: (reservationId: number) => {
       const reservation = data.find((item) => item.reservationId === reservationId);
       if (!reservation) {
         throw new Error("Reservation not found.");
       }
 
-      const currentIndex = statusCycle.indexOf(reservation.reservationStatus);
-      const nextStatus = statusCycle[(currentIndex + 1) % statusCycle.length];
-
       return ReservationService.updateReservation(reservationId, {
-        reservationStatus: nextStatus,
+        reservationStatus: "CANCELLED",
         specialRequest: reservation.specialRequest,
         guestCount: reservation.guestCount,
       });
     },
     onSuccess: () => {
-      toast.success("Reservation status updated.");
+      toast.success("Reservation cancelled successfully.");
       void queryClient.invalidateQueries({ queryKey: ["adminReservations"] });
     },
     onError: (error) => {
-      toast.error(getApiErrorMessage(error, "Failed to update reservation."));
+      toast.error(getApiErrorMessage(error, "Failed to cancel reservation."));
     },
   });
 
@@ -65,21 +59,16 @@ export default function ReservationsPage() {
     onError: (error) => toast.error(getApiErrorMessage(error, "Unable to fetch reservation by ID.")),
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: (reservationId: number) => ReservationService.deleteReservation(reservationId),
-    onSuccess: () => {
-      toast.success("Reservation deleted successfully.");
-      void queryClient.invalidateQueries({ queryKey: ["adminReservations"] });
-    },
-    onError: (error) => toast.error(getApiErrorMessage(error, "Unable to delete reservation.")),
-  });
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Reservations" description="Manage reservation records and status workflow." />
+      <PageHeader
+        title="Reservations"
+        description="View and manage reservations. Status transitions are customer-driven. Check-in, check-out, and room assignment are handled by reception."
+      />
 
       <div className="grid gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-4">
-        <select className="rounded-md border border-slate-300 px-3 py-2 text-sm" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as ReservationStatus)}>
+        <select className="rounded-md border border-slate-300 px-3 py-2 text-sm" title="Filter reservations by status" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as ReservationStatus)}>
           <option value="PENDING">PENDING</option>
           <option value="CONFIRMED">CONFIRMED</option>
           <option value="CHECKED_IN">CHECKED_IN</option>
@@ -90,7 +79,7 @@ export default function ReservationsPage() {
         <button type="button" onClick={() => byStatusMutation.mutate(statusFilter)} className={secondaryButtonClass}>
           Get By Status
         </button>
-        <input value={lookupReservationId} onChange={(event) => setLookupReservationId(event.target.value)} type="number" placeholder="Reservation ID" className="rounded-md border border-slate-300 px-3 py-2 text-sm" />
+        <input value={lookupReservationId} onChange={(event) => setLookupReservationId(event.target.value)} type="number" placeholder="Enter reservation ID (e.g. 42)" className="rounded-md border border-slate-300 px-3 py-2 text-sm" />
         <button
           type="button"
           onClick={() => {
@@ -164,23 +153,17 @@ export default function ReservationsPage() {
             key: "actions",
             header: "Actions",
             render: (row) => (
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  className={tableActionButtonClass}
-                  onClick={() => setPendingStatusReservationId(row.reservationId)}
-                  disabled={updateMutation.isPending}
-                >
-                  Next Status
-                </button>
-                <button
-                  type="button"
-                  className={tableDangerButtonClass}
-                  onClick={() => setDeletingReservationId(row.reservationId)}
-                  disabled={deleteMutation.isPending}
-                >
-                  Delete
-                </button>
+              <div className="flex flex-wrap gap-2">
+                {["PENDING", "CONFIRMED"].includes(row.reservationStatus) ? (
+                  <button
+                    type="button"
+                    className={tableDangerButtonClass}
+                    onClick={() => setPendingCancelReservationId(row.reservationId)}
+                    disabled={cancelMutation.isPending}
+                  >
+                    Cancel
+                  </button>
+                ) : null}
               </div>
             ),
           },
@@ -188,32 +171,16 @@ export default function ReservationsPage() {
       />
 
       <ConfirmDialog
-        open={Boolean(pendingStatusReservationId)}
-        title="Update Reservation Status"
-        description="Move this reservation to the next status in the workflow?"
-        confirmLabel="Update"
-        isConfirming={updateMutation.isPending}
-        onCancel={() => setPendingStatusReservationId(null)}
+        open={Boolean(pendingCancelReservationId)}
+        title="Cancel Reservation"
+        description="This will cancel the reservation and release the room. Continue?"
+        confirmLabel="Cancel Reservation"
+        isConfirming={cancelMutation.isPending}
+        onCancel={() => setPendingCancelReservationId(null)}
         onConfirm={() => {
-          if (pendingStatusReservationId) {
-            updateMutation.mutate(pendingStatusReservationId, {
-              onSettled: () => setPendingStatusReservationId(null),
-            });
-          }
-        }}
-      />
-
-      <ConfirmDialog
-        open={Boolean(deletingReservationId)}
-        title="Delete Reservation"
-        description="This will permanently delete the reservation record."
-        confirmLabel="Delete"
-        isConfirming={deleteMutation.isPending}
-        onCancel={() => setDeletingReservationId(null)}
-        onConfirm={() => {
-          if (deletingReservationId) {
-            deleteMutation.mutate(deletingReservationId, {
-              onSettled: () => setDeletingReservationId(null),
+          if (pendingCancelReservationId) {
+            cancelMutation.mutate(pendingCancelReservationId, {
+              onSettled: () => setPendingCancelReservationId(null),
             });
           }
         }}

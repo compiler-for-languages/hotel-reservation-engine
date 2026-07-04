@@ -5,7 +5,7 @@ import { getDashboardPathForCurrentUser } from "@/utils/session";
 import { clearApplicationSession } from "@/utils/session";
 import { storage } from "@/utils/storage";
 
-const baseURL = import.meta.env.VITE_API_BASE_URL;
+const baseURL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080";
 
 let isHandlingAuthError = false;
 
@@ -28,6 +28,18 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     const status = error?.response?.status as number | undefined;
+    const errorMessage = error?.response?.data?.message as string | undefined;
+
+    // Handle JWT expiration errors regardless of status code
+    if (errorMessage && (errorMessage.toLowerCase().includes("jwt expired") || errorMessage.toLowerCase().includes("token expired") || errorMessage.toLowerCase().includes("expired.*milliseconds")) && !isHandlingAuthError) {
+      isHandlingAuthError = true;
+      clearApplicationSession();
+      window.location.href = "/login";
+      window.setTimeout(() => {
+        isHandlingAuthError = false;
+      }, 500);
+      return Promise.reject(error);
+    }
 
     if ((status === 401 || status === 403) && !isHandlingAuthError) {
       isHandlingAuthError = true;

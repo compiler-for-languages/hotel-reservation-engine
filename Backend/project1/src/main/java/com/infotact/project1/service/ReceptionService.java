@@ -15,6 +15,7 @@ import com.infotact.project1.repository.RoomAssignmentRepository;
 import com.infotact.project1.repository.ReservationRepository;
 import com.infotact.project1.repository.RoomRepository;
 import com.infotact.project1.repository.UserRepository;
+import com.infotact.project1.exception.BusinessExceptions;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -46,25 +47,22 @@ public class ReceptionService {
         Reservation reservation =
                 reservationRepository.findById(
                                 requestDTO.getReservationId())
-                        .orElseThrow(() ->
-                                new RuntimeException("RESERVATION_NOT_FOUND"));
+                        .orElseThrow(BusinessExceptions::reservationNotFound);
 
         if (reservation.getReservationStatus() == ReservationStatus.CHECKED_OUT) {
-            throw new RuntimeException("RESERVATION_ALREADY_CHECKED_OUT");
+            throw BusinessExceptions.reservationAlreadyCheckedOut();
         }
 
-        // Reservation must be confirmed
         if (reservation.getReservationStatus()
                 != ReservationStatus.CONFIRMED) {
 
-            throw new RuntimeException("CHECKIN_NOT_ALLOWED");
+            throw BusinessExceptions.onlyConfirmedReservationsCanBeAssigned();
         }
 
-        // Prevent duplicate room assignment
         if (roomAssignmentRepository.existsByReservation(
                 reservation)) {
 
-            throw new RuntimeException("ROOM_ALREADY_ASSIGNED");
+            throw BusinessExceptions.roomAlreadyAssigned();
         }
 
         // Find available rooms of the reserved room type
@@ -75,7 +73,7 @@ public class ReceptionService {
 
         if (availableRooms.isEmpty()) {
 
-            throw new RuntimeException("NO_AVAILABLE_ROOM");
+            throw BusinessExceptions.noAvailableRoomsFound();
         }
 
         // Random room allocation
@@ -118,32 +116,27 @@ public class ReceptionService {
         Reservation reservation =
                 reservationRepository.findById(
                                 requestDTO.getReservationId())
-                        .orElseThrow(() ->
-                                new RuntimeException("RESERVATION_NOT_FOUND"));
+                        .orElseThrow(BusinessExceptions::reservationNotFound);
 
         if (reservation.getReservationStatus() == ReservationStatus.CHECKED_OUT) {
-            throw new RuntimeException("RESERVATION_ALREADY_CHECKED_OUT");
+            throw BusinessExceptions.reservationAlreadyCheckedOut();
         }
 
-        // Reservation must be confirmed
         if (reservation.getReservationStatus()
                 != ReservationStatus.CONFIRMED) {
 
-            throw new RuntimeException("CHECKIN_NOT_ALLOWED");
+            throw BusinessExceptions.checkInNotAllowed();
         }
 
-        // Fetch room assignment
         RoomAssignment assignment =
                 roomAssignmentRepository
                         .findByReservation(reservation)
-                        .orElseThrow(() ->
-                                new RuntimeException("ROOM_NOT_ASSIGNED"));
+                        .orElseThrow(BusinessExceptions::roomNotAssigned);
 
-        // Prevent duplicate check-in
         if (assignment.getStatus()
                 != AssignmentStatus.ASSIGNED) {
 
-            throw new RuntimeException("ALREADY_CHECKED_IN");
+            throw BusinessExceptions.alreadyCheckedIn();
         }
 
         guestService.validateGuestDetailsCompleted(
@@ -182,32 +175,27 @@ public class ReceptionService {
         Reservation reservation =
                 reservationRepository.findById(
                                 requestDTO.getReservationId())
-                        .orElseThrow(() ->
-                                new RuntimeException("RESERVATION_NOT_FOUND"));
+                        .orElseThrow(BusinessExceptions::reservationNotFound);
 
         if (reservation.getReservationStatus() == ReservationStatus.CHECKED_OUT) {
-            throw new RuntimeException("RESERVATION_ALREADY_CHECKED_OUT");
+            throw BusinessExceptions.reservationAlreadyCheckedOut();
         }
 
-        // Reservation must be checked in
         if (reservation.getReservationStatus()
                 != ReservationStatus.CHECKED_IN) {
 
-            throw new RuntimeException("CHECKOUT_NOT_ALLOWED");
+            throw BusinessExceptions.guestNotCheckedIn();
         }
 
-        // Fetch room assignment
         RoomAssignment assignment =
                 roomAssignmentRepository
                         .findByReservation(reservation)
-                        .orElseThrow(() ->
-                                new RuntimeException("ROOM_NOT_ASSIGNED"));
+                        .orElseThrow(BusinessExceptions::roomAssignmentNotFound);
 
-        // Validate assignment status
         if (assignment.getStatus()
                 != AssignmentStatus.CHECKED_IN) {
 
-            throw new RuntimeException("NOT_CHECKED_IN");
+            throw BusinessExceptions.guestHasNotCheckedIn();
         }
 
         // Record actual checkout time
@@ -465,9 +453,7 @@ public class ReceptionService {
                     RoomAssignment assignment =
                             roomAssignmentRepository
                                     .findByReservation(reservation)
-                                    .orElseThrow(() ->
-                                            new RuntimeException(
-                                                    "Room assignment not found"));
+                                    .orElseThrow(BusinessExceptions::roomAssignmentNotFound);
 
                     return TodayDepartureResponseDTO.builder()
 

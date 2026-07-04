@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { DataTable } from "@/components/common/DataTable";
 import { ErrorState } from "@/components/common/ErrorState";
+import { OccupancyCalendar } from "@/components/common/OccupancyCalendar";
 import { PageHeader } from "@/components/common/PageHeader";
 import { StatsSkeleton } from "@/components/common/StatsSkeleton";
 import { StatusBadge } from "@/components/common/StatusBadge";
@@ -56,11 +57,11 @@ export default function AdminDashboardPage() {
 
   const totalRevenue = payments
     .filter((item) => item.paymentStatus === "SUCCESS")
-    .reduce((sum, item) => sum + item.amount, 0);
+    .reduce((sum, item) => sum + (typeof item.amount === 'number' ? item.amount : parseFloat(item.amount)), 0);
 
   const totalRefundAmount = payments
     .filter((item) => item.paymentStatus === "REFUNDED")
-    .reduce((sum, item) => sum + item.amount, 0);
+    .reduce((sum, item) => sum + (typeof item.amount === 'number' ? item.amount : parseFloat(item.amount)), 0);
 
   const totalReservations = reservations.length;
   const pendingReservations = reservations.filter((item) => item.reservationStatus === "PENDING").length;
@@ -107,13 +108,15 @@ export default function AdminDashboardPage() {
       {!statsLoading ? (
         <div className="grid gap-4 md:grid-cols-3 xl:grid-cols-4">
           {statCards.map((card) => (
-            <div key={card.label} className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-              <p className="text-xs text-slate-500">{card.label}</p>
-              <p className="mt-2 text-2xl font-semibold text-slate-900">{card.value}</p>
+            <div key={card.label} className="card-elegant p-5">
+              <p className="text-sm font-medium text-slate-500">{card.label}</p>
+              <p className="mt-2 text-2xl font-bold text-slate-900">{card.value}</p>
             </div>
           ))}
         </div>
       ) : null}
+
+      <OccupancyCalendar reservations={reservations} />
 
       <DataTable
         title="Recent Reservations"

@@ -160,7 +160,19 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiErrorResponse> handleRuntimeException(
             RuntimeException ex) {
 
-        String safeMessage = ExceptionMessageResolver.resolveRuntimeMessage(ex.getMessage());
+        String message = ex.getMessage();
+        if (message != null && (
+                "Invalid email or password".equals(message)
+                        || "Invalid email or password.".equals(message))) {
+            log.warn("Invalid login credentials");
+            return buildResponse(
+                    HttpStatus.UNAUTHORIZED,
+                    "Unauthorized",
+                    "Invalid email or password."
+            );
+        }
+
+        String safeMessage = ExceptionMessageResolver.resolveRuntimeMessage(message);
 
         if (ExceptionMessageResolver.GENERIC_MESSAGE.equals(safeMessage)) {
             log.error("Unhandled runtime exception", ex);

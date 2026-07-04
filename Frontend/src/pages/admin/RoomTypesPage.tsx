@@ -151,7 +151,7 @@ export default function RoomTypesPage() {
         <div className="space-y-2">
           <h3 className="text-sm font-semibold text-slate-900">Get Room Type By ID</h3>
           <div className="flex gap-2">
-            <input value={lookupRoomTypeId} onChange={(event) => setLookupRoomTypeId(event.target.value)} type="number" placeholder="Room type ID" className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" />
+            <input value={lookupRoomTypeId} onChange={(event) => setLookupRoomTypeId(event.target.value)} type="number" placeholder="Enter room type ID (e.g. 1)" className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" />
             <button
               type="button"
               onClick={() => {
@@ -172,7 +172,7 @@ export default function RoomTypesPage() {
         <div className="space-y-2">
           <h3 className="text-sm font-semibold text-slate-900">Get Room Type By Name</h3>
           <div className="flex gap-2">
-            <input value={lookupRoomTypeName} onChange={(event) => setLookupRoomTypeName(event.target.value)} placeholder="Room type name" className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" />
+            <input value={lookupRoomTypeName} onChange={(event) => setLookupRoomTypeName(event.target.value)} placeholder="Enter room type name (e.g. DELUXE)" className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" />
             <button
               type="button"
               onClick={() => {
@@ -193,23 +193,23 @@ export default function RoomTypesPage() {
 
       <form onSubmit={createForm.handleSubmit((values) => createMutation.mutate(values))} className="grid gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-5">
         <div>
-          <input className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" placeholder="Name" {...createForm.register("name")} />
+          <input className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" placeholder="Room type name (e.g. STANDARD_SINGLE)" {...createForm.register("name")} />
           <FormErrorText message={createForm.formState.errors.name?.message} />
         </div>
         <div>
-          <input className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" placeholder="Description" {...createForm.register("description")} />
+          <input className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" placeholder="Short description shown to customers" {...createForm.register("description")} />
           <FormErrorText message={createForm.formState.errors.description?.message} />
         </div>
         <div>
-          <input type="number" step="0.01" className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" placeholder="Price per night" {...createForm.register("pricePerNight")} />
+          <input type="number" step="0.01" className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" placeholder="Price per night in INR (e.g. 2500)" {...createForm.register("pricePerNight")} />
           <FormErrorText message={createForm.formState.errors.pricePerNight?.message} />
         </div>
         <div>
-          <input type="number" className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" placeholder="Capacity" {...createForm.register("capacity")} />
+          <input type="number" className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" placeholder="Max guests allowed (e.g. 2)" {...createForm.register("capacity")} />
           <FormErrorText message={createForm.formState.errors.capacity?.message} />
         </div>
         <div>
-          <select className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" {...createForm.register("status")}>
+          <select className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" title="ACTIVE room types appear in booking search" {...createForm.register("status")}>
             <option value="ACTIVE">ACTIVE</option>
             <option value="INACTIVE">INACTIVE</option>
           </select>
@@ -265,23 +265,23 @@ export default function RoomTypesPage() {
       <Modal open={Boolean(editingRoomType)} title="Edit Room Type" onClose={() => setEditingRoomType(null)}>
         <form className="grid gap-3 md:grid-cols-2" onSubmit={editForm.handleSubmit((values) => updateMutation.mutate(values))}>
           <div>
-            <input className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" placeholder="Name" {...editForm.register("name")} />
+            <input className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" placeholder="Updated room type name" {...editForm.register("name")} />
             <FormErrorText message={editForm.formState.errors.name?.message} />
           </div>
           <div>
-            <input className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" placeholder="Description" {...editForm.register("description")} />
+            <input className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" placeholder="Updated description for customers" {...editForm.register("description")} />
             <FormErrorText message={editForm.formState.errors.description?.message} />
           </div>
           <div>
-            <input type="number" step="0.01" className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" placeholder="Price per night" {...editForm.register("pricePerNight")} />
+            <input type="number" step="0.01" className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" placeholder="Updated price per night in INR" {...editForm.register("pricePerNight")} />
             <FormErrorText message={editForm.formState.errors.pricePerNight?.message} />
           </div>
           <div>
-            <input type="number" className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" placeholder="Capacity" {...editForm.register("capacity")} />
+            <input type="number" className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" placeholder="Updated max guest capacity" {...editForm.register("capacity")} />
             <FormErrorText message={editForm.formState.errors.capacity?.message} />
           </div>
           <div className="md:col-span-2">
-            <select className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" {...editForm.register("status")}>
+            <select className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" title="ACTIVE makes this room type bookable" {...editForm.register("status")}>
               <option value="ACTIVE">ACTIVE</option>
               <option value="INACTIVE">INACTIVE</option>
             </select>
