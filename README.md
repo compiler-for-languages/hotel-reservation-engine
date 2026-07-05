@@ -271,6 +271,13 @@ git clone <repository-url>
 
 ### Backend
 
+Start redis container using Docker
+
+in terminal
+```bash
+docker exec -it redis redis-cli
+CONFIG SET notify-keyspace-events
+```
 ```bash
 cd Backend/project1
 ./mvnw spring-boot:run
