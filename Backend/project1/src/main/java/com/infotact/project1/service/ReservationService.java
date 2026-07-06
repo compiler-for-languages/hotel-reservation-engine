@@ -105,7 +105,7 @@ public class ReservationService {
             paymentRequest.setReservationId(savedReservation.getReservationId());
             paymentRequest.setPaymentMethod(requestDTO.getPaymentMethod());
 
-            paymentService.createPayment(paymentRequest);
+            paymentService.createPayment(paymentRequest); // When payment fails, release active booking hold
 System.out.println("============================================See after payment");
             return mapToResponse(savedReservation);
         } catch (Exception exception) {
