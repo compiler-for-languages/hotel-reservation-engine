@@ -481,7 +481,10 @@ class ReservationServiceTest {
                 exception.getMessage());
 
         verify(bookingHoldService)
-                .releaseActiveHold(10L);
+                .createHold(any(BookingHoldRequestDTO.class));
+
+        verify(paymentService)
+                .createPayment(any(PaymentRequestDTO.class));
 
         verify(lockService)
                 .releaseLock(lock);

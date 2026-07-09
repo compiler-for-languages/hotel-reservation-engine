@@ -1,4 +1,4 @@
-package com.infotact.project1.unittests;
+package com.infotact.project1.service;
 
 import com.infotact.project1.service.LockService;
 import org.junit.jupiter.api.Test;
