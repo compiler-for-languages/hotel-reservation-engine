@@ -90,7 +90,7 @@ public class ReservationService {
 
             // Create booking hold FIRST to temporarily reserve inventory
             BookingHoldRequestDTO holdRequest = new BookingHoldRequestDTO();
-            holdRequest.setReservationId(reservation.getReservationId()); // Temporary ID, will be updated after reservation save
+            holdRequest.setReservationId(savedReservation.getReservationId()); // Temporary ID, will be updated after reservation save
             holdRequest.setUserId(user.getUserId());
             holdRequest.setRoomTypeId(roomType.getRoomTypeId());
             holdRequest.setCheckInDate(requestDTO.getCheckInDate());
@@ -105,7 +105,15 @@ public class ReservationService {
             paymentRequest.setReservationId(savedReservation.getReservationId());
             paymentRequest.setPaymentMethod(requestDTO.getPaymentMethod());
 
-            paymentService.createPayment(paymentRequest); // When payment fails, release active booking hold
+            try {
+
+
+                paymentService.createPayment(paymentRequest);
+            }
+            catch (Exception e) {
+                bookingHoldService.releaseActiveHold(savedReservation.getReservationId());
+                throw e;
+            }
 System.out.println("============================================See after payment");
             return mapToResponse(savedReservation);
         } catch (Exception exception) {

@@ -38,7 +38,7 @@ public class Project1Application {
 	Internally performs:
 	1. Creates ApplicationContext
 	2. Scans packages starting from com.infotact.project1
-	3. Regsiters Controllers, Services, Repositories and Configurations
+	3. Regiters Controllers, Services, Repositories and Configurations
 	4. Loads application.properties
 	5. Connects to PostgreSQL
 	6. Initializes Redis and Redisson
