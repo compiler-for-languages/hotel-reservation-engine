@@ -55,7 +55,7 @@ public interface PaymentRepository
      * WHERE reservation_id = ?;
      */
     Optional<Payment> findByReservation(
-            Reservation reservation);
+            Optional<Reservation> reservation);
 
     /*
      * Retrieves all payments having a specific status.
@@ -81,4 +81,6 @@ public interface PaymentRepository
      */
     List<Payment> findByPaymentStatus(
             PaymentStatus paymentStatus);
+
+    Optional<Payment> findByReservationReservationId(Long reservationId);
 }
