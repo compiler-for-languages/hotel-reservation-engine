@@ -16,6 +16,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -35,7 +36,7 @@ public class PaymentService {
             throw BusinessExceptions.reservationAlreadyCheckedOut();
         }
 
-        if (paymentRepository.findByReservation(reservation).isPresent()) {
+        if (paymentRepository.findByReservation(Optional.of(reservation)).isPresent()) {
             throw BusinessExceptions.paymentAlreadyExists(reservation.getReservationId());
         }
 
@@ -72,7 +73,7 @@ public class PaymentService {
         Reservation reservation = reservationRepository.findById(reservationId)
                 .orElseThrow(() -> BusinessExceptions.reservationNotFound(reservationId));
 
-        Payment payment = paymentRepository.findByReservation(reservation)
+        Payment payment = paymentRepository.findByReservation(Optional.of(reservation))
                 .orElseThrow(() -> BusinessExceptions.paymentNotFoundForReservation(reservationId));
 
         return mapToResponse(payment);
