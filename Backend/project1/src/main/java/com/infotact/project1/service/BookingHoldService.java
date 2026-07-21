@@ -3,12 +3,10 @@ package com.infotact.project1.service;
 import com.infotact.project1.dto.request.BookingHoldRequestDTO;
 import com.infotact.project1.dto.response.BookingHoldResponseDTO;
 import com.infotact.project1.enums.BookingHoldStatus;
-import com.infotact.project1.model.BookingHold;
-import com.infotact.project1.model.RoomType;
-import com.infotact.project1.model.User;
-import com.infotact.project1.repository.BookingHoldRepository;
-import com.infotact.project1.repository.RoomTypeRepository;
-import com.infotact.project1.repository.UserRepository;
+import com.infotact.project1.enums.PaymentStatus;
+import com.infotact.project1.enums.ReservationStatus;
+import com.infotact.project1.model.*;
+import com.infotact.project1.repository.*;
 import com.infotact.project1.exception.BusinessExceptions;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -16,6 +14,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+import java.util.Optional;
 import java.util.stream.StreamSupport;
 
 @Service
@@ -33,6 +32,8 @@ public class BookingHoldService {
     // Repository used to validate room type existence
     private final RoomTypeRepository roomTypeRepository;
 
+    private final PaymentRepository paymentRepository;
+    private final ReservationRepository   reservationRepository;
     // Creates a temporary booking hold with a five-minute expiration
     public BookingHoldResponseDTO createHold(
             BookingHoldRequestDTO requestDTO) {
@@ -128,13 +129,41 @@ public class BookingHoldService {
 
     // Release active booking hold after payment
     // Release active booking hold using reservation id
-    public void releaseActiveHold(
-            Long reservationId) {
+    //release hold if payment fails
+    public void releaseActiveHold(Long reservationId) {
 
-        // Reservation id is also used as the Redis key
+        // Remove booking hold from Redis
         bookingHoldRepository.deleteById(
                 reservationId.toString());
+
+        // Fetch payment
+        Payment payment = paymentRepository
+                .findByReservationReservationId(reservationId)
+                .orElseThrow(() ->
+                        BusinessExceptions.paymentNotFound(reservationId));
+
+        // If payment failed, expire the reservation
+        if (payment.getPaymentStatus() == PaymentStatus.FAILED) {
+
+            Reservation reservation = reservationRepository
+                    .findById(reservationId)
+                    .orElseThrow(() ->
+                            BusinessExceptions.reservationNotFound(reservationId));
+
+            reservation.setReservationStatus(
+                    ReservationStatus.EXPIRED);
+
+            reservationRepository.save(reservation);
+        }
     }
+
+
+
+
+
+
+
+
 
 //    // Convert hold to reservation - mark as CONVERTED to prevent double counting
 //    public void convertHoldToReservation(Long userId, Long reservationId) {

@@ -66,6 +66,7 @@ public class BookingHoldExpirationListener
                                                     + reservationId));
 
             // Expire only pending reservations
+            //This check creates an exception for confirmed payments
             if (reservation.getReservationStatus()
                     == ReservationStatus.PENDING) {
 
