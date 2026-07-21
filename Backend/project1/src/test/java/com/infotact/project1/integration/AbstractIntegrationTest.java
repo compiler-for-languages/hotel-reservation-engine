@@ -2,13 +2,10 @@ package com.infotact.project1.integration;
 
 import com.infotact.project1.repository.BookingHoldRepository;
 import org.junit.jupiter.api.BeforeEach;
-//import org.redisson.api.RedissonClient;
-import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
-//import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -16,14 +13,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.infotact.project1.dto.request.LoginRequestDTO;
 import org.springframework.http.MediaType;
 
-//import static org.mockito.ArgumentMatchers.anyLong;
-//import static org.mockito.ArgumentMatchers.anyString;
-//import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-//import org.redisson.api.RLock;
-//
-//import static org.mockito.ArgumentMatchers.*;
 
 
 /*
@@ -35,7 +26,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * -> Loads test profile
  * -> Configures MockMvc for HTTP request testing
  * -> Rolls back database changes after each test
- * -> Replaces Redis with mocked configuration
+ * -> Redis/Redisson are excluded via @Profile("!test") in production configs
  */
 
 @SpringBootTest
@@ -52,12 +43,6 @@ public abstract class AbstractIntegrationTest {
     @Autowired
     protected MockMvc mockMvc;
 
-//    @MockitoBean
-//    protected RedissonClient redissonClient;
-
-//    @MockitoBean
-//    protected RLock rLock;
-
     @Autowired
     protected ObjectMapper objectMapper;
 
@@ -69,20 +54,11 @@ public abstract class AbstractIntegrationTest {
 
     protected String adminToken;
 
-    @Autowired
-    private RedissonClient redissonClient;
-
 
     @BeforeEach
     void setUp() throws Exception {
 
         bookingHoldRepository.deleteAll();
-//        redissonClient.getKeys().flushall();
-//        when(redissonClient.getLock(anyString()))
-//                .thenReturn(rLock);
-
-//        when(rLock.tryLock(anyLong(), anyLong(), any()))
-//                .thenReturn(true);
     }
 
     /*
