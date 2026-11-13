@@ -7,8 +7,12 @@ import com.infotact.project1.model.BookingHold;
 import com.infotact.project1.model.RoomType;
 import com.infotact.project1.model.User;
 import com.infotact.project1.repository.BookingHoldRepository;
+import com.infotact.project1.repository.PaymentRepository;
+import com.infotact.project1.repository.ReservationRepository;
 import com.infotact.project1.repository.RoomTypeRepository;
 import com.infotact.project1.repository.UserRepository;
+import com.infotact.project1.enums.PaymentStatus;
+import com.infotact.project1.model.Payment;
 import com.infotact.project1.service.BookingHoldService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -47,6 +51,12 @@ class BookingHoldServiceTest {
 
     @Mock
     private RoomTypeRepository roomTypeRepository;
+
+    @Mock
+    private PaymentRepository paymentRepository;
+
+    @Mock
+    private ReservationRepository reservationRepository;
 
     @InjectMocks
     private BookingHoldService bookingHoldService;
@@ -340,10 +350,19 @@ class BookingHoldServiceTest {
     @Test
     void releaseActiveHold_ShouldDeleteHold() {
 
+        Payment payment = new Payment();
+        payment.setPaymentStatus(PaymentStatus.PENDING);
+
+        when(paymentRepository.findByReservationReservationId(10L))
+                .thenReturn(java.util.Optional.of(payment));
+
         bookingHoldService.releaseActiveHold(10L);
 
         verify(bookingHoldRepository)
                 .deleteById("10");
+
+        verify(paymentRepository)
+                .findByReservationReservationId(10L);
     }
 
 }
