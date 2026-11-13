@@ -87,8 +87,7 @@ class PaymentServiceTest {
         when(reservationRepository.findById(1L))
                 .thenReturn(Optional.of(reservation));
 
-        when(paymentRepository.findByReservation(
-                reservation))
+        when(paymentRepository.findByReservation(Optional.of(reservation)))
                 .thenReturn(Optional.empty());
 
         Payment payment =
@@ -138,7 +137,7 @@ class PaymentServiceTest {
                 .findById(1L);
 
         verify(paymentRepository)
-                .findByReservation(reservation);
+                .findByReservation(Optional.of(reservation));
 
         verify(paymentRepository)
                 .save(any(Payment.class));
@@ -197,8 +196,7 @@ class PaymentServiceTest {
         when(reservationRepository.findById(1L))
                 .thenReturn(Optional.of(reservation));
 
-        when(paymentRepository.findByReservation(
-                reservation))
+        when(paymentRepository.findByReservation(Optional.of(reservation)))
                 .thenReturn(Optional.of(new Payment()));
 
         RuntimeException exception =
@@ -329,7 +327,7 @@ class PaymentServiceTest {
         payment.setPaymentMethod(PaymentMethod.UPI);
         payment.setPaymentStatus(PaymentStatus.SUCCESS);
 
-        when(paymentRepository.findByReservation(reservation))
+        when(paymentRepository.findByReservation(Optional.of(reservation)))
                 .thenReturn(Optional.of(payment));
 
         PaymentResponseDTO response =
@@ -346,7 +344,7 @@ class PaymentServiceTest {
                 response.getPaymentStatus());
 
         verify(reservationRepository).findById(1L);
-        verify(paymentRepository).findByReservation(reservation);
+        verify(paymentRepository).findByReservation(Optional.of(reservation));
     }
 
     /*
@@ -386,7 +384,7 @@ class PaymentServiceTest {
         when(reservationRepository.findById(1L))
                 .thenReturn(Optional.of(reservation));
 
-        when(paymentRepository.findByReservation(reservation))
+        when(paymentRepository.findByReservation(Optional.of(reservation)))
                 .thenReturn(Optional.empty());
 
         RuntimeException exception =
@@ -399,7 +397,7 @@ class PaymentServiceTest {
                 exception.getMessage());
 
         verify(paymentRepository)
-                .findByReservation(reservation);
+                .findByReservation(Optional.of(reservation));
     }
 
     /*

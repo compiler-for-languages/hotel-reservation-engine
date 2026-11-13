@@ -1,12 +1,9 @@
 package com.infotact.project1;
 
+import com.infotact.project1.integration.AbstractIntegrationTest;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
 
-@SpringBootTest
-@ActiveProfiles("test")
-class Project1ApplicationTests {
+class Project1ApplicationTests extends AbstractIntegrationTest {
 
 	@Test
 	void contextLoads() {
